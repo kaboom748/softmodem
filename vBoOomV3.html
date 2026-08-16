@@ -1,0 +1,3239 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Softmodem 56k — banc du cœur</title>
+<style>
+:root{
+  --bg:#f2f0e9; --card:#fbfaf6; --card2:#ffffff;
+  --bd:#e2dfd5; --bd2:#cfccc0;
+  --tx:#2c2c2a; --tx2:#5f5e5a; --tx3:#8b8a83;
+  --teal:#1D9E75; --teal2:#5DCAA5; --tealL:#9FE1CB; --tealD:#04342C;
+  --amber:#EF9F27; --amber2:#FAC775; --amberBg:#FAEEDA; --amberTx:#633806;
+  --greenBg:#EAF3DE; --greenBd:#C0DD97; --greenTx:#27500A;
+  --redBg:#FCEBEB; --redTx:#791F1F;
+  --scope:#181f1c; --scopeTx:#B4B2A9; --term:#1b1b19;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:12px;background:var(--bg);color:var(--tx);
+  font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  max-width:1120px;margin-inline:auto}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+h1{font-size:17px;font-weight:500;margin:0 8px 0 0}
+h2{font-size:15px;font-weight:500;margin:0}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;
+  border:.5px solid var(--bd);background:var(--card2);font-size:12px;color:var(--tx2);
+  cursor:default;user-select:none}
+button.chip{cursor:pointer;color:var(--tx)}
+button.chip:hover{border-color:var(--bd2)}
+.chip.on{background:#E1F5EE;border-color:var(--tealL);color:var(--tealD)}
+.chip.start{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:500}
+.chip.start.running{background:var(--amberBg);border-color:var(--amber2);color:var(--amberTx)}
+main{display:block}
+.page{display:none}
+.page.on{display:block}
+#tabs{display:flex;gap:6px;background:var(--card);border:.5px solid var(--bd);
+  border-radius:12px;padding:5px;margin-bottom:12px}
+.tab{flex:1;border:0;background:transparent;border-radius:9px;padding:7px 4px 11px;
+  cursor:pointer;text-align:center;position:relative;font-family:inherit}
+.tab .tl{display:block;font-size:13.5px;font-weight:500;color:var(--tx2)}
+.tab.on{background:var(--card2);box-shadow:inset 0 0 0 .5px var(--bd2)}
+.tab.on .tl{color:var(--tx)}
+.tab.on::after{content:"";position:absolute;left:16px;right:16px;bottom:4px;height:3px;
+  border-radius:2px;background:var(--teal)}
+.tstat{display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:11.5px;color:var(--tx2);margin-top:3px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bd2);flex:none}
+.dot.g{background:var(--teal)}.dot.a{background:var(--amber)}.dot.r{background:#C0392B}
+.cvC{height:440px}.cvS{height:100px}.cvE{height:72px}.cvW{height:220px}.cvO{height:64px}
+.lgrid{display:block}
+@media(min-width:980px){
+  .lgrid{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+  .row2{grid-template-columns:260px 1fr;gap:14px}
+  .rowC{grid-template-columns:1fr;gap:14px}
+  .cards{grid-template-columns:repeat(4,1fr)}
+  .card b{font-size:18px}
+  .cvC{height:680px}.cvS{height:140px}.cvE{height:96px}.cvW{height:320px}.cvO{height:84px}
+  .eqbox{height:96px}
+  .term{height:190px}
+  #journal{height:220px}
+  .info{grid-template-columns:repeat(3,1fr);font-size:13px}
+  .panel{padding:16px}
+}
+.panel{background:var(--card);border:.5px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.phead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.pill{font-size:12px;padding:3px 10px;border-radius:11px;background:var(--card2);
+  border:.5px solid var(--bd);color:var(--tx2);white-space:nowrap}
+.pill.g{background:var(--greenBg);color:var(--greenTx);border-color:var(--greenBd)}
+.pill.a{background:var(--amberBg);color:var(--amberTx);border-color:var(--amber2)}
+.pill.r{background:var(--redBg);color:var(--redTx);border-color:#F7C1C1}
+.steps{display:flex;gap:4px;margin:2px 0 3px}
+.steps b{flex:1;height:8px;border-radius:2px;background:var(--bd)}
+.steps b.past{background:var(--tealL)}
+.steps b.cur{background:var(--teal)}
+.phase{font-size:12.5px;color:var(--tx2);margin-bottom:10px}
+.row2{display:grid;grid-template-columns:176px 1fr;gap:10px}
+.rowC{display:grid;grid-template-columns:1fr;gap:10px}
+@media(max-width:420px){.row2,.rowC{grid-template-columns:1fr}}
+canvas.scope{display:block;width:100%;background:var(--scope);border-radius:6px}
+.ovl{position:relative}
+.ovl .mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:#6d7a74;font-size:11px;text-align:center;padding:10px;pointer-events:none}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+.card{background:var(--card2);border:.5px solid var(--bd);border-radius:6px;padding:6px 9px}
+.card i{display:block;font-style:normal;font-size:11.5px;color:var(--tx2)}
+.card b{font-size:15px;font-weight:500}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:12px;
+  color:var(--tx2);margin:10px 0}
+.info span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term{background:var(--term);border-radius:6px 6px 0 0;padding:9px;height:150px;overflow-y:auto;
+  font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;color:#C6C4BA;
+  white-space:pre-wrap;word-break:break-all}
+.term .ok{color:#5DCAA5}
+.term .warn{color:#FAC775}
+.term .rem{color:#9FE1CB}
+.dim{color:#6a6a64}
+.termin{width:100%;background:#242420;border:0;border-radius:0 0 6px 6px;color:#e8e6da;
+  font:13.5px ui-monospace,Menlo,Consolas,monospace;padding:8px 10px;outline:none}
+.termin::placeholder{color:#6a6a64}
+.portsel{flex:1;min-width:0;background:var(--card2);border:.5px solid var(--bd);border-radius:8px;padding:5px 8px;font:12.5px system-ui;color:var(--tx)}
+button.chip:disabled{opacity:.45;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.sub{font-size:13px;font-weight:500;margin:12px 0 5px}
+.note{font-size:11.5px;color:var(--tx2)}
+.btnwide{width:100%;padding:10px;border-radius:8px;border:.5px solid var(--bd2);
+  background:var(--card2);font-size:13.5px;color:var(--tx);cursor:pointer;margin-top:10px}
+.btnwide:hover{background:var(--card)}
+.btnwide.hot{background:var(--amberBg);border-color:var(--amber2);color:var(--amberTx)}
+.ctlrow{display:flex;align-items:center;gap:10px;margin:2px 0 10px}
+.sw{width:46px;height:26px;border-radius:13px;border:0;background:var(--bd2);
+  position:relative;cursor:pointer;padding:0;flex:none}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.sw.on{background:var(--teal)}
+.sw.on i{left:23px}
+.swl{font-size:13px}
+.btnbig{width:100%;padding:12px;border-radius:9px;border:.5px solid transparent;
+  font-size:15px;font-weight:600;cursor:pointer;margin:0 0 12px;font-family:inherit}
+.btnbig.go{background:var(--teal);color:#fff}
+.btnbig.off{background:var(--card2);color:var(--tx);border-color:var(--bd2);font-weight:500}
+.btnbig.busy{background:var(--amberBg);color:var(--amberTx);border-color:var(--amber2);cursor:default}
+.btnbig.na{background:var(--card2);color:var(--tx3);border-color:var(--bd);cursor:default}
+.termin:disabled{opacity:.55}
+.chip.fut{opacity:.45;cursor:default}
+.btnwide.on{background:var(--amberBg);color:var(--amberTx);border-color:var(--amber2)}
+.chips.pr{align-items:center}
+input[type=range]{width:100%;accent-color:var(--teal);margin:4px 0}
+#journal{background:var(--term);border-radius:6px;padding:9px;height:180px;overflow-y:auto;
+  font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;color:#C6C4BA;white-space:pre-wrap}
+.jA{color:#5DCAA5}.jB{color:#FAC775}.jW{color:#F09595}
+footer{font-size:12px;color:var(--tx2);margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 18px}
+.eqbox{height:72px;background:var(--scope);border-radius:6px;display:flex;
+  align-items:center;justify-content:center;color:#6d7a74;font-size:12px;text-align:center;padding:8px}
+.mt8{margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Softmodem 56k — banc du cœur</h1>
+  <button id="btnStart" class="chip start">▶ Démarrer</button>
+  <span id="chipFs" class="chip">— kHz</span>
+  <button id="chipSpeed" class="chip">×1,0 temps réel</button>
+  <button id="chipAuto" class="chip">Connexion auto —</button>
+  <button id="chipReset" class="chip">⟲ Réinitialiser</button>
+  <button id="chipVol" class="chip" title="Couper / rétablir l'écoute">Écoute <b id="volPct">40 %</b></button>
+</header>
+
+<nav id="tabs">
+  <button class="tab on" data-t="A"><span class="tl">Modem A</span><span class="tstat"><i class="dot" id="tdA"></i><span id="ttA">à l'écoute</span></span></button>
+  <button class="tab" data-t="L"><span class="tl">Ligne</span><span class="tstat"><i class="dot a" id="tdL"></i><span id="ttL">RTC analogique</span></span></button>
+  <button class="tab" data-t="B"><span class="tl">Modem B</span><span class="tstat"><i class="dot" id="tdB"></i><span id="ttB">à l'écoute</span></span></button>
+</nav>
+
+<main>
+  <section id="pA" class="panel page on"></section>
+
+  <section id="pL" class="panel page">
+    <div class="phead"><h2>Ligne — simulateur de canal</h2><span id="pillProf" class="pill a">Parfait</span></div>
+    <div class="lgrid">
+      <div>
+        <div class="chips" id="spanChips" style="margin:0 0 6px">
+          <span class="swl">Échelle</span>
+          <button class="chip" data-sp="4000">4 kHz</button>
+          <button class="chip" data-sp="24000">24 kHz</button>
+          <button class="chip on" data-sp="auto">Auto</button>
+        </div>
+        <canvas id="cvWater" class="scope cvW"></canvas>
+        <canvas id="cvScope" class="scope mt8 cvO"></canvas>
+      </div>
+      <div>
+        <div class="chips" id="profChips" style="margin-top:0">
+          <button class="chip on" data-p="perfect">Parfait</button>
+          <button class="chip" data-p="pstn">RTC analogique</button>
+          <button class="chip" data-p="ulaw">RTC µ-law (56k)</button>
+          <button class="chip" data-p="wide">Hors norme</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <span class="dim" style="white-space:nowrap">Bruit de ligne</span>
+          <input type="range" id="uNoise" min="0" max="100" value="0" step="1" style="flex:1">
+          <span id="uNoiseLbl" class="dim" style="min-width:86px;text-align:right">coupé</span>
+        </div>
+        <div id="lineParams" class="note" style="margin-bottom:8px">—</div>
+        <div class="sub">Écoute sur haut-parleurs (carte par défaut)</div>
+        <div class="chips" id="srcChips" style="margin-top:0">
+          <button class="chip" data-s="A">A (TX)</button>
+          <button class="chip" data-s="B">B (TX)</button>
+          <button class="chip" data-s="inA">Entrée A</button>
+          <button class="chip" data-s="inB">Entrée B</button>
+          <button class="chip" data-s="mix">Mix</button>
+          <button class="chip on" data-s="auto">Auto</button>
+        </div>
+        <div id="srcNote" class="note" style="margin-bottom:6px">—</div>
+        <div id="monWarn" class="note jW" style="display:none;margin-bottom:6px">🔇 moniteur coupé : la sortie par défaut du système est la carte du connecteur (boucle audio). Choisis tes haut-parleurs comme sortie par défaut, puis « ↻ Détecter » pour réactiver. Les instruments restent actifs.</div>
+        <input type="range" id="volRange" min="0" max="100" value="40">
+        <div class="chips" id="mChips">
+          <button class="chip" data-m="0">M0</button>
+          <button class="chip" data-m="1">M1</button>
+          <button class="chip on" data-m="2">M2</button>
+        </div>
+        <div id="mNote" class="note">M2 : haut-parleur toujours actif</div>
+        <button id="btnPickup" class="btnwide">Décrocher le combiné (bruit continu)</button>
+        <div class="ctlrow" style="margin-top:8px;align-items:center;gap:10px">
+          <span class="swl" style="white-space:nowrap">Niveau du bruit</span>
+          <input type="range" id="pkAmp" min="0" max="100" value="35" style="flex:1;accent-color:#1D9E75">
+          <span class="swl" id="pkLbl" style="min-width:150px;text-align:right">—</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pB" class="panel page"></section>
+
+  <section id="pJ" class="panel">
+    <div class="phead"><h2>Journal du handshake</h2><span id="pillJ" class="pill">en attente</span></div>
+    <div id="journal"></div>
+  </section>
+</main>
+
+<footer>
+  <span>t = <b id="stT">0,00 s</b></span>
+  <span id="stSpeed">×1,0</span>
+  <span>DSP <b id="stCpu">— %</b> CPU</span>
+  <span id="stAudio">audio : inactif</span>
+  <span>tampon <b id="stBuf">—</b></span>
+  <span>sous-alimentations : <b id="stUr">0</b></span>
+</footer>
+
+<script>
+'use strict';
+/* ================= utilitaires ================= */
+const $=s=>document.querySelector(s);
+const fr=(x,d=1)=>(x<0?'−':'')+Math.abs(x).toFixed(d).replace('.',',');
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const dB=v=>20*Math.log10(Math.max(v,1e-12));
+const now=()=>performance.now();
+
+let gaussSpare=null;
+function gauss(){
+  if(gaussSpare!==null){const v=gaussSpare;gaussSpare=null;return v;}
+  let u=0,v=0,s=0;
+  do{u=Math.random()*2-1;v=Math.random()*2-1;s=u*u+v*v;}while(s>=1||s===0);
+  const m=Math.sqrt(-2*Math.log(s)/s);
+  gaussSpare=v*m;return u*m;
+}
+
+/* FFT radix-2 en place */
+function fft(re,im){
+  const n=re.length;
+  for(let i=1,j=0;i<n;i++){
+    let bit=n>>1;
+    for(;j&bit;bit>>=1)j^=bit;
+    j^=bit;
+    if(i<j){const tr=re[i];re[i]=re[j];re[j]=tr;const ti=im[i];im[i]=im[j];im[j]=ti;}
+  }
+  for(let len=2;len<=n;len<<=1){
+    const ang=-2*Math.PI/len,wr=Math.cos(ang),wi=Math.sin(ang);
+    for(let i=0;i<n;i+=len){
+      let cr=1,ci=0;
+      for(let k=0;k<len/2;k++){
+        const a=i+k,b=i+k+len/2;
+        const vr=re[b]*cr-im[b]*ci, vi=re[b]*ci+im[b]*cr;
+        re[b]=re[a]-vr; im[b]=im[a]-vi;
+        re[a]+=vr; im[a]+=vi;
+        const nr=cr*wr-ci*wi; ci=cr*wi+ci*wr; cr=nr;
+      }
+    }
+  }
+}
+function hann(n,i){return .5-.5*Math.cos(2*Math.PI*i/(n-1));}
+
+/* Biquad RBJ */
+class Biquad{
+  constructor(){this.b0=1;this.b1=0;this.b2=0;this.a1=0;this.a2=0;this.z1=0;this.z2=0;}
+  lp(fs,f,q){const w=2*Math.PI*f/fs,c=Math.cos(w),s=Math.sin(w),al=s/(2*q),a0=1+al;
+    this.b0=((1-c)/2)/a0;this.b1=(1-c)/a0;this.b2=this.b0;this.a1=(-2*c)/a0;this.a2=(1-al)/a0;return this;}
+  hp(fs,f,q){const w=2*Math.PI*f/fs,c=Math.cos(w),s=Math.sin(w),al=s/(2*q),a0=1+al;
+    this.b0=((1+c)/2)/a0;this.b1=(-(1+c))/a0;this.b2=this.b0;this.a1=(-2*c)/a0;this.a2=(1-al)/a0;return this;}
+  p(x){const y=this.b0*x+this.z1;this.z1=this.b1*x-this.a1*y+this.z2;this.z2=this.b2*x-this.a2*y;return y;}
+  reset(){this.z1=0;this.z2=0;}
+}
+
+/* codec µ-law G.711 */
+function ulawEnc(x){
+  const MAX=32635,BIAS=132;
+  let s=Math.round(clamp(x,-1,1)*32767),sign=(s>>8)&0x80;
+  if(sign)s=-s; if(s>MAX)s=MAX; s+=BIAS;
+  let exp=7;
+  for(let m=0x4000;(s&m)===0&&exp>0;exp--,m>>=1);
+  const man=(s>>(exp+3))&0x0F;
+  return ~(sign|(exp<<4)|man)&0xFF;
+}
+function ulawDec(u){
+  u=~u&0xFF;
+  const sign=u&0x80,exp=(u>>4)&7,man=u&0x0F;
+  let s=((man<<3)+132)<<exp; s-=132;
+  return (sign?-s:s)/32767;
+}
+
+/* anneau d'échantillons pour les instruments */
+class Ring{
+  constructor(n){this.b=new Float32Array(n);this.n=n;this.i=0;}
+  push(v){this.b[this.i]=v;this.i=(this.i+1)%this.n;}
+  last(out){const L=out.length;let j=this.i-L;if(j<0)j+=this.n;
+    for(let k=0;k<L;k++){out[k]=this.b[j];j++;if(j>=this.n)j=0;}return out;}
+}
+
+/* lecteur d'anneau avec rééchantillonnage linéaire : ramène un flux cadencé par
+   une carte son (fs quelconque) sur l'horloge du moniteur, avec asservissement
+   doux du pas sur le niveau de retard (cible 2048 échantillons) */
+class RingReader{
+  constructor(ring,ratio){this.r=ring;this.ratio=ratio;this.tgt=2048;this.pos=(ring.i-this.tgt+ring.n)%ring.n;}
+  read(){
+    const r=this.r;let lag=r.i-this.pos;if(lag<0)lag+=r.n;
+    if(lag<128||lag>r.n-128){this.pos=(r.i-this.tgt+r.n)%r.n;lag=this.tgt;}
+    this.pos+=this.ratio*(1+0.02*(lag-this.tgt)/this.tgt);
+    if(this.pos>=r.n)this.pos-=r.n;
+    const i0=this.pos|0,f=this.pos-i0,i1=(i0+1)%r.n;
+    return r.b[i0]*(1-f)+r.b[i1]*f;
+  }
+}
+
+/* ================= blocs DSP ================= */
+class Goertzel{
+  constructor(fs,f,N){
+    this.N=N;const w=2*Math.PI*f/fs;
+    this.k=2*Math.cos(w);this.cw=Math.cos(w);this.sw=Math.sin(w);
+    this.reset();
+  }
+  reset(){this.s1=0;this.s2=0;this.i=0;this.mag=0;this.re=0;this.im=0;}
+  p(x){
+    const s=x+this.k*this.s1-this.s2;this.s2=this.s1;this.s1=s;
+    if(++this.i>=this.N){
+      this.re=this.s1-this.s2*this.cw;
+      this.im=this.s2*this.sw;
+      const m=this.s1*this.s1+this.s2*this.s2-this.k*this.s1*this.s2;
+      this.mag=Math.sqrt(Math.max(m,0))/(this.N/2);
+      this.s1=0;this.s2=0;this.i=0;return true;
+    }
+    return false;
+  }
+}
+
+/* émetteur FSK V.21 + trameur UART 8N1, phase continue */
+class FskTx{
+  constructor(fs,fMark,fSpace,bps,amp){
+    this.fs=fs;this.f1=fMark;this.f0=fSpace;this.amp=amp;
+    this.spb=fs/bps;this.ph=0;this.on=false;
+    this.q=[];this.bits=null;this.bi=0;this.acc=0;this.bit=1;
+    this.txBytes=0;
+  }
+  start(){this.on=true;this.acc=0;this.bits=null;this.bit=1;}
+  stop(){this.on=false;this.q.length=0;this.bits=null;}
+  send(str){for(let i=0;i<str.length;i++)this.q.push(str.charCodeAt(i)&0xFF);}
+  sendByte(b){this.q.push(b&0xFF);}
+  busy(){return this.q.length>0||this.bits!==null;}
+  nextBit(){
+    if(this.bits===null){
+      if(this.q.length===0)return 1;
+      const b=this.q.shift();this.txBytes++;
+      this.bits=[0,b&1,(b>>1)&1,(b>>2)&1,(b>>3)&1,(b>>4)&1,(b>>5)&1,(b>>6)&1,(b>>7)&1,1];
+      this.bi=0;
+    }
+    const v=this.bits[this.bi++];
+    if(this.bi>=this.bits.length)this.bits=null;
+    return v;
+  }
+  sample(){
+    if(!this.on)return 0;
+    this.acc+=1;
+    if(this.acc>=this.spb){this.acc-=this.spb;this.bit=this.nextBit();}
+    const f=this.bit?this.f1:this.f0;
+    this.ph+=2*Math.PI*f/this.fs;
+    if(this.ph>2*Math.PI)this.ph-=2*Math.PI;
+    return this.amp*Math.sin(this.ph);
+  }
+}
+
+/* récepteur FSK : corrélateurs I/Q + échantillonneur UART + DCD + mesures */
+class FskRx{
+  constructor(fs,fMark,fSpace,bps,onByte){
+    this.qLoss=-999;/*FSK authentique : jamais de décrochage sur bruit, seulement sur perte de porteuse*/
+    this.fs=fs;this.f1=fMark;this.f0=fSpace;this.spb=fs/bps;this.onByte=onByte;
+    this.p1=0;this.p0=0;this.w1=2*Math.PI*fMark/fs;this.w0=2*Math.PI*fSpace/fs;
+    const a=1-Math.exp(-2*Math.PI*180/fs);
+    this.a=a;
+    this.I1=0;this.Q1=0;this.I0=0;this.Q0=0;
+    this.soft=0;this.E=0;
+    this.dcd=false;this.dcdCnt=0;this.floor=1e-6;
+    this.st=0;this.t=0;this.bitIdx=0;this.byte=0;this.gate=false;
+    this.ferr=0;this.rxBytes=0;
+    this.mHi=0.02;this.mLo=-0.02;this.varr=1e-4;
+    this.pI=1;this.pQ=0;this.dfHz=0;
+    this.eyePh=0;
+  }
+  snrDb(){
+    const sep=(this.mHi-this.mLo)/2;
+    return 10*Math.log10(Math.max(sep*sep,1e-12)/Math.max(this.varr,1e-12));
+  }
+  p(x){
+    this.p1+=this.w1;if(this.p1>2*Math.PI)this.p1-=2*Math.PI;
+    this.p0+=this.w0;if(this.p0>2*Math.PI)this.p0-=2*Math.PI;
+    const a=this.a;
+    this.I1+=a*(x*Math.cos(this.p1)-this.I1); this.Q1+=a*(x*Math.sin(this.p1)-this.Q1);
+    this.I0+=a*(x*Math.cos(this.p0)-this.I0); this.Q0+=a*(x*Math.sin(this.p0)-this.Q0);
+    const E1=this.I1*this.I1+this.Q1*this.Q1, E0=this.I0*this.I0+this.Q0*this.Q0;
+    this.E=E1+E0;
+    this.soft=E1-E0;
+
+    /* plancher de bruit adaptatif + DCD à hystérésis */
+    if(this.E<this.floor)this.floor=this.E; else this.floor+=(this.E-this.floor)*2e-6;
+    if(this.floor>2e-4)this.floor=2e-4;
+    const on=this.E>Math.max(6*this.floor,8e-4);
+    const off=this.E<Math.max(3*this.floor,4e-4);
+    if(!this.dcd){ this.dcdCnt=on?this.dcdCnt+1:0; if(this.dcdCnt>this.fs*0.04){this.dcd=true;this.dcdCnt=0;} }
+    else{ this.dcdCnt=off?this.dcdCnt+1:0; if(this.dcdCnt>this.fs*0.15){this.dcd=false;this.dcdCnt=0;this.st=0;} }
+
+    /* décalage de fréquence mesuré sur le corrélateur dominant */
+    const dI=E1>=E0?this.I1:this.I0, dQ=E1>=E0?this.Q1:this.Q0;
+    const cr=dI*this.pI+dQ*this.pQ, ci=dQ*this.pI-dI*this.pQ;
+    if(cr*cr+ci*ci>1e-10){
+      const dphi=Math.atan2(ci,cr);
+      this.dfHz+=0.0005*(dphi*this.fs/(2*Math.PI)-this.dfHz);
+    }
+    this.pI=dI;this.pQ=dQ;
+
+    /* statistiques du signal souple (pour SNR démod.) */
+    if(this.dcd){
+      if(this.soft>0){this.mHi+=1e-3*(this.soft-this.mHi);
+        const e=this.soft-this.mHi;this.varr+=1e-3*(e*e-this.varr);}
+      else{this.mLo+=1e-3*(this.soft-this.mLo);
+        const e=this.soft-this.mLo;this.varr+=1e-3*(e*e-this.varr);}
+    }
+
+    /* UART asynchrone 8N1 */
+    if(!this.dcd){this.st=0;this.eyePh=0;return;}
+    this.eyePh+=1/this.spb;if(this.eyePh>=2)this.eyePh-=2;
+    if(!this.gate){this.st=0;return;}
+    switch(this.st){
+      case 0:
+        if(this.soft<0){this.st=1;this.t=this.spb/2;}
+        break;
+      case 1:
+        if(--this.t<=0){
+          if(this.soft<0){this.st=2;this.t=this.spb;this.bitIdx=0;this.byte=0;this.eyePh=0.5;}
+          else this.st=0;
+        }
+        break;
+      case 2:
+        if(--this.t<=0){
+          this.t+=this.spb;
+          if(this.bitIdx<8){
+            if(this.soft>0)this.byte|=(1<<this.bitIdx);
+            this.bitIdx++;
+          }else{
+            if(this.soft>0){this.rxBytes++;this.onByte(this.byte);}
+            else this.ferr++;
+            this.st=0;
+          }
+        }
+        break;
+    }
+  }
+}
+
+/* tonalité de réponse ANS : 2100 Hz pur (V.25) — un modem V.22bis n'utilise pas V.8 */
+class Ansam{
+  constructor(fs,amp){this.fs=fs;this.amp=amp||0.18;this.on=false;this.ph=0;this.revs=0;}
+  start(){this.on=true;this.ph=0;}
+  stop(){this.on=false;}
+  sample(){
+    if(!this.on)return 0;
+    this.ph+=2*Math.PI*2100/this.fs;
+    if(this.ph>2*Math.PI)this.ph-=2*Math.PI;
+    return this.amp*Math.sin(this.ph);
+  }
+}
+
+/* détecteur de raie : puissance cohérente à f vs large bande (automode 980/1650) */
+class LineTone{
+  constructor(fs,f,thr){this.w=2*Math.PI*f/fs;this.o=0;this.a=1/(fs*0.02);
+    this.thr=thr||0.5;
+    this.i=0;this.q=0;this.b=1e-6;this.cnt=0;this.on=false;}
+  p(x){
+    this.o+=this.w;if(this.o>6.283185307)this.o-=6.283185307;
+    this.i+=this.a*(x*Math.cos(this.o)-this.i);
+    this.q+=this.a*(x*Math.sin(this.o)-this.q);
+    this.b+=this.a*(x*x-this.b);
+    const r=2*(this.i*this.i+this.q*this.q)/Math.max(this.b,1e-9);
+    if(r>this.thr)this.cnt++;else this.cnt=Math.max(0,this.cnt-3);
+    this.on=this.cnt>0;
+    return r;
+  }
+  held(fs,ms){return this.cnt> fs*ms/1000;}
+  reset(){this.i=0;this.q=0;this.b=1e-6;this.cnt=0;this.on=false;}
+}
+/* détecteur de tonalité de réponse 2100 Hz + compteur d'inversions (creux d'enveloppe) */
+class AnsDet{
+  constructor(fs){
+    this.fs=fs;this.g=new Goertzel(fs,2100,Math.round(fs*0.01));
+    this.env=0;this.on=false;this.onMs=0;this.dips=0;this.refr=0;this.level=0;this.pAng=null;
+  }
+  p(x){
+    if(this.g.p(x)){
+      const m=this.g.mag;this.level=m;
+      this.env+=0.3*(m-this.env);
+      const present=this.env>0.06;
+      this.onMs=present?this.onMs+10:0;
+      this.on=this.onMs>=200;
+      if(this.refr>0)this.refr--;
+      if(present&&m>0.09){
+        const ang=Math.atan2(this.g.im,this.g.re);
+        if(this.pAng!==null&&this.refr===0){
+          let d=ang-this.pAng;
+          while(d>Math.PI)d-=2*Math.PI;
+          while(d<-Math.PI)d+=2*Math.PI;
+          if(Math.abs(d)>2.0){this.dips++;this.refr=5;}
+        }
+        this.pAng=ang;
+      }else this.pAng=null;
+    }
+  }
+  reset(){this.on=false;this.onMs=0;this.dips=0;this.env=0;this.refr=0;this.pAng=null;}
+}
+
+/* détecteur de tonalité hors bande (signature/marque V.BoOm) : seuil absolu par blocs de 20 ms */
+class SigTone{
+  constructor(fs,f){this.g=new Goertzel(fs,f,Math.round(fs*0.02));this.env=0;this.ms=0;}
+  p(x){if(this.g.p(x)){this.env+=0.4*(this.g.mag-this.env);this.ms=this.env>0.05?this.ms+20:0;}}
+  held(ms){return this.ms>=ms;}
+  reset(){this.env=0;this.ms=0;}
+}
+
+/* ===== protocoles négociables ===== */
+const PROTOS={
+  '21':{code:'21',label:'V.21',bps:300,baud:300,mod:'FSK',rank:1},
+  '22':{code:'22',label:'V.22',bps:1200,baud:600,mod:'DPSK 4 phases',rank:2},
+  '2B':{code:'2B',label:'V.22bis',bps:2400,baud:600,mod:'16-QAM',rank:3,inband:true},
+  'BM':{code:'BM',label:'V.BoOm',bps:0,baud:0,mod:'16-QAM large bande',rank:4,inband:true}
+};
+const PROTO_ORDER=['21','22','2B','BM'];
+/* les capacités « bis » ne voyagent pas dans CM/JM : elles se signalent en bande par S1 (authentique) */
+function myList(maxP){return PROTO_ORDER.filter(c=>PROTOS[c].rank<=PROTOS[maxP].rank&&!PROTOS[c].inband);}
+function bestCommon(myMax,list){
+  let best='21';
+  for(const c of PROTO_ORDER){
+    if(PROTOS[c]&&PROTOS[c].rank<=PROTOS[myMax].rank&&list.includes(c)&&PROTOS[c].rank>PROTOS[best].rank)best=c;
+  }
+  return best;
+}
+
+/* brouilleur auto-synchronisant 1 + x^-14 + x^-17 (V.22) */
+class Scrambler{
+  constructor(){this.r=0;this.pc=0;}
+  tx(b){
+    if(this.pc>=64){b^=1;this.pc=0;}
+    const y=(b^(this.r>>13)^(this.r>>16))&1;this.r=((this.r<<1)|y)&0x1FFFF;
+    if(y===1)this.pc++;else this.pc=0;
+    return y;
+  }
+  rx(b){const y=(b^(this.r>>13)^(this.r>>16))&1;this.r=((this.r<<1)|b)&0x1FFFF;return y;}
+}
+/* constellation V.22/V.22bis (table spandsp, grille {±1,±3}, échelle 1/racine(10)) :
+   index = (quadrant<<2)|(b3<<1)|b4 ; le mode 1200 émet toujours le point |0x01 = (3,1) local */
+const C22S=0.31623;
+/* ===== constellations M-QAM générales (V.BoOm adaptatif, esprit V.34) =====
+   2 bits de quadrant en codage différentiel (invariance 90°) + (b-2) bits locaux,
+   niveaux impairs codés Gray par axe. M=16 reproduit bit à bit la table V.22bis. */
+function grayInv(n){const inv=new Array(n);for(let i=0;i<n;i++)inv[i^(i>>1)]=i;return inv;}
+function mkConst(M){
+  const b=Math.round(Math.log(M)/Math.LN2),L=Math.max(1,M/4),n=Math.max(1,Math.round(Math.sqrt(L)));
+  const axisBits=b>2?(b-2)>>1:0;
+  const g2k=grayInv(n),k2g=new Array(n);
+  for(let k=0;k<n;k++)k2g[k]=k^(k>>1);
+  const raw=[];
+  for(let q=0;q<4;q++){const c=Math.cos(q*Math.PI/2),sn=Math.sin(q*Math.PI/2);
+    for(let li=0;li<L;li++){
+      let x=1,y=1;
+      if(L>1){const xb=li&(n-1),yb=li>>axisBits;x=2*g2k[xb]+1;y=2*g2k[yb]+1;}
+      raw.push([x*c-y*sn,x*sn+y*c]);
+    }}
+  let e=0;for(const p of raw)e+=p[0]*p[0]+p[1]*p[1];
+  const s=1/Math.sqrt(e/raw.length);
+  let mm=0;const pts=raw.map(p=>{const P=[p[0]*s,p[1]*s];mm+=Math.hypot(P[0],P[1]);return P;});
+  return {M,b,L,n,axisBits,scale:s,pts,mean:mm/pts.length,k2g,g2k};
+}
+const CONSTS={};
+function getConst(M){return CONSTS[M]||(CONSTS[M]=mkConst(M));}
+const CONST16=getConst(16).pts;
+const PHASE_STEPS=[1,0,2,3]; /* dibit (b1<<1)|b2 -> avance de quadrant */
+
+/* racine de cosinus surélevé */
+function rrcVal(t,a){
+  const pi=Math.PI;
+  if(Math.abs(t)<1e-8)return 1-a+4*a/pi;
+  const crit=Math.abs(Math.abs(t)-1/(4*a));
+  if(crit<1e-6)return a/Math.SQRT2*((1+2/pi)*Math.sin(pi/(4*a))+(1-2/pi)*Math.cos(pi/(4*a)));
+  const n=Math.sin(pi*t*(1-a))+4*a*t*Math.cos(pi*t*(1+a));
+  const d=pi*t*(1-16*a*a*t*t);
+  return n/d;
+}
+function rrcTable(sps,span,a){
+  const N=Math.round(span*sps)+1,h=new Float32Array(N);let e=0;
+  for(let k=0;k<N;k++){h[k]=rrcVal((k-(N-1)/2)/sps,a);e+=h[k]*h[k];}
+  const g=1/Math.sqrt(e);
+  for(let k=0;k<N;k++)h[k]*=g;
+  return h;
+}
+
+/* émetteur DPSK V.22 : 600 bauds, 2 bits/symbole, mise en forme RRC alpha 0,75 */
+class PskTx{
+  constructor(fs,fc,amp,baud,alpha,span){
+    this.fs=fs;this.fc=fc;this.amp=amp;
+    baud=baud||600;alpha=(alpha===undefined)?0.75:alpha;span=span||6;
+    this.baud=baud;this.sps=fs/baud;
+    this.h=rrcTable(this.sps,span,alpha);this.span=span;
+    this.symI=new Float32Array(16);this.symQ=new Float32Array(16);this.si=0;
+    this.phase=0;this.th=0;this.w=2*Math.PI*fc/fs;
+    this.tSym=this.sps;
+    this.on=false;this.mode='sb1';this.qam=false;this.s1f=0;this.cst=0;this.C=getConst(16);
+    this.scr=new Scrambler();
+    this.q=[];this.bits=null;this.bi=0;this.txBytes=0;this.bitSrc=null;
+    this.pk=Math.sqrt(2*this.sps);/*RMS TX = amp, exact quel que soit sps*/
+  }
+  start(mode){this.on=true;if(mode)this.mode=mode;}
+  setMode(m){this.mode=m;}
+  setQam(on){this.qam=!!on;}
+  stop(){this.on=false;this.q.length=0;this.bits=null;}
+  send(str){for(let i=0;i<str.length;i++)this.q.push(str.charCodeAt(i)&0xFF);}
+  busy(){return this.q.length>0||this.bits!==null;}
+  rawBit(){
+    if(this.bits===null){
+      if(this.q.length===0)return 1;
+      const b=this.q.shift();this.txBytes++;
+      this.bits=[0,b&1,(b>>1)&1,(b>>2)&1,(b>>3)&1,(b>>4)&1,(b>>5)&1,(b>>6)&1,(b>>7)&1,1];
+      this.bi=0;
+    }
+    const v=this.bits[this.bi++];
+    if(this.bi>=this.bits.length)this.bits=null;
+    return v;
+  }
+  setConst(M){this.C=getConst(M);}
+  nextSymbol(){
+    const C=this.C,nb=C.b-2;let b1,b2,li=0,pt;
+    if(this.mode==='usb1'){b1=1;b2=1;}
+    else if(this.mode==='u0'){b1=0;b2=0;}          /* marqueur débit + : raie fc+Rs/4 */
+    else if(this.mode==='u3'){b1=1;b2=1;}          /* marqueur débit - : raie fc-Rs/4 */
+    else if(this.mode==='s1'){this.s1f^=1;b1=this.s1f?0:1;b2=b1;}
+    else if(this.mode==='sb1'){
+      b1=this.scr.tx(1);b2=this.scr.tx(1);
+      if(this.qam)for(let i=0;i<nb;i++)li=(li<<1)|this.scr.tx(1);
+    }else{
+      const src=this.bitSrc;
+      const nx=src?()=>src():()=>this.rawBit();   /* V.42 synchrone ou UART asynchrone */
+      b1=this.scr.tx(nx());b2=this.scr.tx(nx());
+      if(this.qam)for(let i=0;i<nb;i++)li=(li<<1)|this.scr.tx(nx());
+    }
+    const di=(b1<<1)|b2;
+    this.cst=(this.cst+PHASE_STEPS[di])&3;
+    this.si=(this.si+1)&15;
+    if(this.qam&&(this.mode==='sb1'||this.mode==='data'))pt=li;
+    else if(this.mode==='u0'||this.mode==='u3')pt=C.L-1;   /* point diagonal max : raie forte */
+    else pt=Math.min(1,C.L-1);
+    const c=C.pts[(this.cst*C.L+pt)|0];
+    this.symI[this.si]=c[0];this.symQ[this.si]=c[1];
+  }
+  sample(){
+    if(!this.on)return 0;
+    this.tSym+=1;
+    if(this.tSym>=this.sps){this.tSym-=this.sps;this.nextSymbol();}
+    let I=0,Q=0;
+    for(let k=0;k<this.span;k++){
+      const idx=Math.round(this.tSym+k*this.sps);
+      if(idx<this.h.length){
+        const j=(this.si-k)&15,hv=this.h[idx];
+        I+=this.symI[j]*hv;Q+=this.symQ[j]*hv;
+      }
+    }
+    this.th+=this.w;if(this.th>2*Math.PI)this.th-=2*Math.PI;
+    return this.amp*this.pk*(I*Math.cos(this.th)-Q*Math.sin(this.th));
+  }
+}
+
+/* récepteur DPSK V.22 : mélange I/Q, décimation, filtre adapté, Gardner, décision différentielle */
+class PskRx{
+  constructor(fs,fc,onByte,baud,alpha,span){
+    this.fs=fs;this.fc=fc;this.onByte=onByte;
+    baud=baud||600;alpha=(alpha===undefined)?0.75:alpha;span=span||6;
+    this.baud=baud;
+    this.th=0;this.w=2*Math.PI*fc/fs;
+    const a=1-Math.exp(-2*Math.PI*(1.5*baud)/fs);this.a=a;
+    this.I1=0;this.Q1=0;this.I2=0;this.Q2=0;
+    this.D=Math.max(1,Math.round(fs/(10*baud)));this.dc=0;
+    this.fs2=fs/this.D;this.sps2=this.fs2/baud;
+    this.h=rrcTable(this.sps2,span,alpha);
+    this.dl=new Float32Array(2*this.h.length);this.di=0;
+    this.prevI=0;this.prevQ=0;this.curI=0;this.curQ=0;
+    this.mu=0;this.fn=1/this.sps2;this.freq=this.fn;this.intg=0;
+    this.midI=0;this.midQ=0;this.midDone=false;this.pSI=0;this.pSQ=0;
+    this.lastStrI=0.001;this.lastStrQ=0;
+    this.E=0;this.dcd=false;this.dcdCnt=0;this.floor=1e-6;
+    this.Eb=1e-6;this.aE=1/(fs*0.05);this.sigOK=false;
+    this.gate=false;
+    this.ubn=-1;this.byte=0;this.ferr=0;this.rxBytes=0;this.bitSink=null;
+    this.scr=new Scrambler();
+    this.evm2=0.05;this.dfHz=0;this.mAvg=0.02;
+    this.soft=0;this.eyePh=0;this.symT=0;
+    this.yA=0.05;this.mHi=0.06;this.mLo=-0.06;this.gs=-1;
+    this.f1=fc;this.f0=fc;
+    this.constPts=new Float32Array(1200);this.cpi=0;this.cpn=0;
+    this.qLoss=5;
+    this.lastQ=-1;this.run3=0;this.alt13=0;this.s1Seen=false;this.usb1=false;
+    this.qam=false;this.th2=0;this.thI=0;this.agc=0.03;this.lastQa=-1;this.ones4=0;this.ones32=false;
+    this.gT1=2e-4;this.gT2=0.02;this.gC1=0.06;this.gC2=0.0015;this.gA=0.02;/* gains de boucle (par strobe) */
+    this.C=getConst(16);this.M=16;this.hold=false;this.agcAvg=0;this.evm2S=0.05;this.gear=1;this.g16T=0;
+    this.eqOn=false;this.eqMu=6e-4;
+    this.eqW=new Float32Array(42);this.eqW[20]=1;/* FFE 21 prises complexes, centre en 10 */
+    this.eqX=new Float32Array(42);this.eqI=0;
+    this.w1=2*Math.PI*(fc-baud/2)/fs;this.w2=2*Math.PI*(fc+baud/2)/fs;
+    this.o1=0;this.o2=0;this.aS=1/(fs*0.02);
+    this.sp1=0;this.sq1=0;this.sp2=0;this.sq2=0;this.sb=1e-6;this.s1Cnt=0;
+  }
+  snrDb(){return 10*Math.log10(1/Math.max(this.evm2,1e-5));}
+  snrSlowDb(){return 10*Math.log10(1/Math.max(this.evm2S,1e-5));}
+  setConst(M){this.C=getConst(M);this.M=M;this.ones4=0;this.ones32=false;}
+  pushBitRx(b){
+    if(this.bitSink){this.bitSink(b);return;}      /* V.42 : flux HDLC synchrone */
+    if(this.ubn<0){if(b===0){this.ubn=0;this.byte=0;}return;}
+    if(this.ubn<8){this.byte|=b<<this.ubn;this.ubn++;return;}
+    if(b===1){this.rxBytes++;this.onByte(this.byte);}else this.ferr++;
+    this.ubn=-1;
+  }
+  strobe(yI,yQ){
+    if(this.qam){this.strobeQam(yI,yQ);return;}
+    const dI=yI*this.lastStrI+yQ*this.lastStrQ;
+    const dQ=yQ*this.lastStrI-yI*this.lastStrQ;
+    this.lastStrI=yI;this.lastStrQ=yQ;
+    const mag=Math.hypot(dI,dQ);
+    if(mag<1e-8)return;
+    let ph=Math.atan2(dQ,dI);if(ph<0)ph+=2*Math.PI;
+    const q=Math.round(ph/(Math.PI/2))&3;
+    let res=ph-q*Math.PI/2;if(res>Math.PI)res-=2*Math.PI;
+    this.dfHz+=0.01*(res*this.baud/(2*Math.PI)-this.dfHz);
+    this.mAvg+=0.02*(mag-this.mAvg);
+    const gI=dI/this.mAvg,gQ=dQ/this.mAvg;
+    const nI=dI/mag,nQ=dQ/mag;
+    const iI=[1,0,-1,0][q],iQ=[0,1,0,-1][q];
+    const e2=(gI-iI)*(gI-iI)+(gQ-iQ)*(gQ-iQ);
+    this.evm2+=0.02*(e2-this.evm2);
+    if((this.cpn++&1)===0){
+      this.constPts[this.cpi]=nI;this.constPts[this.cpi+1]=nQ;
+      this.cpi=(this.cpi+2)%this.constPts.length;
+    }
+    if(q===3)this.run3++;else this.run3=Math.max(0,this.run3-8);
+    if(this.lastQ>=0&&((q===1&&this.lastQ===3)||(q===3&&this.lastQ===1)))this.alt13++;
+    else this.alt13=Math.max(0,this.alt13-6);
+    this.lastQ=q;
+    this.usb1=this.run3>=90;
+    if(this.alt13>=36)this.s1Seen=true;
+    const bb=[[0,1],[0,0],[1,0],[1,1]][q];
+    if(this.gate){
+      this.pushBitRx(this.scr.rx(bb[0]));
+      this.pushBitRx(this.scr.rx(bb[1]));
+    }else{this.scr.rx(bb[0]);this.scr.rx(bb[1]);}
+  }
+  strobeQam(yI,yQ){
+    /* structure V.34 : égaliseur AVANT le rotateur de porteuse (son retard reste
+       hors de la boucle de phase), erreur rétro-tournée pour l'adaptation LMS */
+    const m=Math.hypot(yI,yQ);
+    /* rattrapage AGC sur moyenne glissante (jamais sur un symbole isolé : en 256-QAM
+       le point intérieur vaut 1/8 de la moyenne et ferait osciller un rattrapage naïf) */
+    this.agcAvg+=0.05*(m-this.agcAvg);
+    if(this.agcAvg>1.3*this.agc||this.agcAvg<0.7*this.agc)this.agc=this.agcAvg;
+    else this.agc+=this.gA*(m-this.agc);
+    const g=Math.max(this.agc/this.C.mean,1e-6);
+    const xI=yI/g,xQ=yQ/g;
+    const X=this.eqX;this.eqI=(this.eqI+2)%X.length;X[this.eqI]=xI;X[this.eqI+1]=xQ;
+    let uI=xI,uQ=xQ;
+    if(this.eqOn){
+      const W=this.eqW;let yr=0,yi=0,j=this.eqI;
+      for(let k=0;k<W.length;k+=2){const wr=W[k],wi=W[k+1],xr=X[j],xi=X[j+1];
+        yr+=wr*xr-wi*xi;yi+=wr*xi+wi*xr;j-=2;if(j<0)j+=X.length;}
+      uI=yr;uQ=yi;
+    }
+    const c=Math.cos(this.th2),sn=Math.sin(this.th2);
+    const zI=uI*c+uQ*sn,zQ=-uI*sn+uQ*c;
+    /* boîte de vitesses des boucles — trois rapports. Sur ligne parfaite, TOUT le
+       bruit résiduel est auto-généré (gradient LMS + orbites des boucles) : une fois
+       très propre, on gèle presque tout (gear 16, prises figées). Les intégrateurs
+       gardent leurs corrections : les vrais ppm d'horloge du mode câble restent tenus.
+       Dégel immédiat si la qualité chute. */
+    {const s=this.evm2S;let g=this.gear;
+     if(s>0.01){g=1;this.g16T=0;}
+     else if(s>0.004){if(g>6)g=6;this.g16T=0;}
+     else if(s<0.0008){if(g<16&&++this.g16T>4000)g=16;/* 0,5 s de propreté soutenue avant de figer : on gèle au sommet du polissage, pas au premier creux */}
+     else{if(g<6)g=6;this.g16T=0;}
+     this.gear=g;}
+    const CT=this.C,sc=CT.scale,n=CT.n;
+    const kI=n>1?Math.max(0,Math.min(n-1,Math.round((Math.abs(zI)/sc-1)/2))):0;
+    const kQ=n>1?Math.max(0,Math.min(n-1,Math.round((Math.abs(zQ)/sc-1)/2))):0;
+    const cI=(zI>=0?1:-1)*(2*kI+1)*sc,cQ=(zQ>=0?1:-1)*(2*kQ+1)*sc;
+    const perr=Math.atan2(zQ*cI-zI*cQ,zI*cI+zQ*cQ);
+    this.thI+=(this.gC2/Math.min(this.gear,4))*perr;/* ration /4 (cf. Gardner) */
+    if(this.thI>0.02)this.thI=0.02;if(this.thI<-0.02)this.thI=-0.02;
+    this.th2+=(this.gC1/this.gear)*perr+this.thI;
+    if(this.th2>Math.PI)this.th2-=2*Math.PI;if(this.th2<-Math.PI)this.th2+=2*Math.PI;
+    const eI=cI-zI,eQ=cQ-zQ;
+    if(this.eqOn&&this.dcd&&this.evm2<0.15){/* adaptation gelée si décisions douteuses (démarrage, creux de bruit) */
+      /* erreur ramenée dans le domaine de l'égaliseur : e_y = R(+theta) e_z */
+      const fI=eI*c-eQ*sn,fQ=eI*sn+eQ*c;
+      const W=this.eqW,mu=this.gear>=16?0:(this.gear>=6?this.eqMu*0.25:this.eqMu);/* gear 16 : prises figées *//* boîte de vitesses LMS */
+      let j=this.eqI;
+      for(let k=0;k<W.length;k+=2){const xr=X[j],xi=X[j+1];
+        W[k]+=mu*(fI*xr+fQ*xi);W[k+1]+=mu*(fQ*xr-fI*xi);j-=2;if(j<0)j+=X.length;}
+      /* verrou de phase : la prise centrale reste réelle positive — la rotation
+         appartient à la boucle de porteuse, pas aux prises (sinon les deux
+         intégrateurs dérivent en sens opposés et le LMS poursuit une cible mobile) */
+      const ci=(W.length>>2)<<1;         /* index réel de la prise centrale */
+      const ph=Math.atan2(W[ci+1],W[ci]);
+      if(ph!==0){
+        const cc=Math.cos(ph),ss=Math.sin(ph);
+        for(let k=0;k<W.length;k+=2){const ar=W[k],ai=W[k+1];
+          W[k]=ar*cc+ai*ss;W[k+1]=ai*cc-ar*ss;}
+        this.th2-=ph;
+        if(this.th2>Math.PI)this.th2-=2*Math.PI;if(this.th2<-Math.PI)this.th2+=2*Math.PI;
+      }
+    }
+    const e2=eI*eI+eQ*eQ;
+    this.evm2+=0.02*(e2-this.evm2);
+    this.evm2S+=0.001*(e2-this.evm2S);/* moyenne lente (tau ~1 s) : juge des montées */
+    if((this.cpn++&1)===0){
+      this.constPts[this.cpi]=zI;this.constPts[this.cpi+1]=zQ;
+      this.cpi=(this.cpi+2)%this.constPts.length;
+    }
+    let a=Math.atan2(cQ,cI);if(a<0)a+=2*Math.PI;
+    const qa=Math.floor(a/(Math.PI/2))&3;
+    if(this.lastQa<0){this.lastQa=qa;return;}
+    const dq=(qa-this.lastQa+4)&3;this.lastQa=qa;
+    const bb=[[0,1],[0,0],[1,0],[1,1]][dq];
+    /* bits locaux : niveaux Gray par axe, décodés dans le repère du quadrant décidé
+       (invariant par l'ambiguïté de phase mod 90°) */
+    const ca=Math.cos(qa*Math.PI/2),sa=Math.sin(qa*Math.PI/2);
+    const lI=cI*ca+cQ*sa,lQ=-cI*sa+cQ*ca;
+    const kx=Math.max(0,Math.min(n-1,Math.round((lI/sc-1)/2)));
+    const ky=Math.max(0,Math.min(n-1,Math.round((lQ/sc-1)/2)));
+    const out=[bb[0],bb[1]];
+    if(CT.L>1){
+      const gy=CT.k2g[ky],gx=CT.k2g[kx],w=CT.axisBits;
+      for(let i=w-1;i>=0;i--)out.push((gy>>i)&1);
+      for(let i=w-1;i>=0;i--)out.push((gx>>i)&1);
+    }
+    let all1=1;const dec=[];
+    for(const bt of out){const d=this.scr.rx(bt);dec.push(d);all1&=d;}
+    if(all1)this.ones4++;else this.ones4=0;
+    this.ones32=this.ones4>=8;                 /* 8 symboles pleins d'uns */
+    if(this.gate&&!this.hold){for(const d of dec)this.pushBitRx(d);}
+  }
+  p(x){
+    this.Eb+=this.aE*(x*x-this.Eb);
+    /* raies S1 (fc±300 Hz) — détection spectrale, robuste sans horloge symbole */
+    this.o1+=this.w1;if(this.o1>6.283185307)this.o1-=6.283185307;
+    this.o2+=this.w2;if(this.o2>6.283185307)this.o2-=6.283185307;
+    this.sp1+=this.aS*(x*Math.cos(this.o1)-this.sp1);
+    this.sq1+=this.aS*(x*Math.sin(this.o1)-this.sq1);
+    this.sp2+=this.aS*(x*Math.cos(this.o2)-this.sp2);
+    this.sq2+=this.aS*(x*Math.sin(this.o2)-this.sq2);
+    this.sb+=this.aS*(x*x-this.sb);
+    const lr=2*(this.sp1*this.sp1+this.sq1*this.sq1+this.sp2*this.sp2+this.sq2*this.sq2)/Math.max(this.sb,1e-9);
+    if(lr>0.18){if(++this.s1Cnt>this.fs*0.04)this.s1Seen=true;}
+    else this.s1Cnt=Math.max(0,this.s1Cnt-2);
+    this.th+=this.w;if(this.th>2*Math.PI)this.th-=2*Math.PI;
+    const a=this.a;
+    const mi=x*Math.cos(this.th),mq=-x*Math.sin(this.th);
+    this.I1+=a*(mi-this.I1);this.Q1+=a*(mq-this.Q1);
+    this.I2+=a*(this.I1-this.I2);this.Q2+=a*(this.Q1-this.Q2);
+    if(++this.dc<this.D)return;
+    this.dc=0;
+    this.di=(this.di+2)%this.dl.length;
+    this.dl[this.di]=this.I2;this.dl[this.di+1]=this.Q2;
+    let yI=0,yQ=0;const H=this.h,L=H.length,DL=this.dl,M=DL.length;
+    let j=this.di;
+    for(let k=0;k<L;k++){yI+=DL[j]*H[k];yQ+=DL[j+1]*H[k];j-=2;if(j<0)j+=M;}
+    const e=yI*yI+yQ*yQ;
+    this.E+=0.05*(e-this.E);
+    if(this.E<this.floor)this.floor=this.E;else this.floor+=(this.E-this.floor)*2e-5;
+    if(this.floor>2e-4)this.floor=2e-4;
+    const on=this.E>Math.max(6*this.floor,8e-4),off=this.E<Math.max(3*this.floor,4e-4);
+    if(!this.dcd){this.dcdCnt=on?this.dcdCnt+1:0;if(this.dcdCnt>this.fs2*0.03){this.dcd=true;this.dcdCnt=0;}}
+    else{this.dcdCnt=off?this.dcdCnt+1:0;if(this.dcdCnt>this.fs2*0.12){this.dcd=false;this.dcdCnt=0;this.ubn=-1;}}
+    this.sigOK=this.E>0.35*this.Eb; /* discrimine porteuse structurée vs bruit plat (mesuré : 4,0 / 0,87 / 0,13) */
+    this.yA+=0.002*(Math.abs(yI)-this.yA);
+    this.mHi=1.2*this.yA;this.mLo=-1.2*this.yA;
+    this.prevI=this.curI;this.prevQ=this.curQ;this.curI=yI;this.curQ=yQ;
+    this.soft=yI;
+    this.symT+=this.freq;if(this.symT>=2)this.symT-=2;
+    this.eyePh=this.symT;
+    this.mu+=this.freq;
+    if(!this.midDone&&this.mu>=0.5){
+      const f=(this.mu-0.5)/this.freq;
+      this.midI=this.curI+(this.prevI-this.curI)*f;
+      this.midQ=this.curQ+(this.prevQ-this.curQ)*f;
+      this.midDone=true;
+    }
+    if(this.mu>=1){
+      const f=(this.mu-1)/this.freq;
+      const sI=this.curI+(this.prevI-this.curI)*f;
+      const sQ=this.curQ+(this.prevQ-this.curQ)*f;
+      this.mu-=1;this.midDone=false;
+      if(this.dcd){
+        const err=this.gs*((sI-this.pSI)*this.midI+(sQ-this.pSQ)*this.midQ)/(this.E+1e-9);
+        const gr=this.gear||1;
+        /* intégrateur à ration /4 : pleine ration réinjecte sa marche aléatoire
+           (lectures -8 dB mesurées), /16 laisse dériver les ppm (glissements) —
+           /4 est l'optimum mesuré ; les rares glissements restants (rafale d'une
+           seconde) sont absorbés par le double témoin du juge trames */
+        this.intg+=(this.gT1/Math.min(gr,4))*err;
+        this.freq=this.fn-this.intg-(this.gT2/gr)*err;
+        if(this.freq<this.fn*0.98)this.freq=this.fn*0.98;
+        if(this.freq>this.fn*1.02)this.freq=this.fn*1.02;
+        this.strobe(sI,sQ);
+      }
+      this.pSI=sI;this.pSQ=sQ;
+    }
+  }
+}
+
+/* DTMF : génération */
+const DTMF={'1':[697,1209],'2':[697,1336],'3':[697,1477],'4':[770,1209],'5':[770,1336],
+'6':[770,1477],'7':[852,1209],'8':[852,1336],'9':[852,1477],'*':[941,1209],'0':[941,1336],'#':[941,1477]};
+class DtmfGen{
+  constructor(fs,amp){this.fs=fs;this.amp=amp;this.seq='';this.i=0;this.t=0;this.on=false;this.p1=0;this.p2=0;this.f=null;this.done=true;}
+  dial(s){this.seq=s;this.i=0;this.t=0;this.on=false;this.done=false;}
+  sample(){
+    if(this.done)return 0;
+    if(!this.on){
+      if(this.i>=this.seq.length){this.done=true;return 0;}
+      this.f=DTMF[this.seq[this.i]]||null;this.on=true;this.t=0;this.p1=0;this.p2=0;
+    }
+    this.t+=1/this.fs;
+    if(this.f===null){if(this.t>=0.16){this.on=false;this.i++;}return 0;}
+    if(this.t<0.08){
+      this.p1+=2*Math.PI*this.f[0]/this.fs;this.p2+=2*Math.PI*this.f[1]/this.fs;
+      return this.amp*(Math.sin(this.p1)+Math.sin(this.p2))*0.5;
+    }
+    if(this.t>=0.16){this.on=false;this.i++;}
+    return 0;
+  }
+}
+
+/* DTMF : détection côté central (banc de 8 Goertzel, blocs de 20 ms) */
+class DtmfDet{
+  constructor(fs,onDigit){
+    const N=Math.round(fs*0.02);
+    this.rows=[697,770,852,941].map(f=>new Goertzel(fs,f,N));
+    this.cols=[1209,1336,1477].map(f=>new Goertzel(fs,f,N));
+    this.onDigit=onDigit;this.cur=null;this.stable=0;this.lastMs=0;this.silMs=0;
+    this.digits='';this.map=['1','2','3','4','5','6','7','8','9','*','0','#'];
+  }
+  p(x){
+    let tick=false;
+    for(const g of this.rows)if(g.p(x))tick=true;
+    for(const g of this.cols)g.p(x);
+    if(!tick)return;
+    let ri=-1,rm=0,ci=-1,cm=0;
+    this.rows.forEach((g,i)=>{if(g.mag>rm){rm=g.mag;ri=i;}});
+    this.cols.forEach((g,i)=>{if(g.mag>cm){cm=g.mag;ci=i;}});
+    const hit=(rm>0.015&&cm>0.015)?this.map[ri*3+ci]:null;
+    if(hit!==null){this.silMs=0;}else this.silMs+=20;
+    if(hit===this.cur){this.stable++;}
+    else{this.cur=hit;this.stable=1;}
+    if(hit!==null&&this.stable===2){this.digits+=hit;this.onDigit(hit);}
+  }
+  reset(){this.digits='';this.cur=null;this.stable=0;this.silMs=0;}
+}
+
+/* ================= ligne, central, modems ================= */
+const PROFILES={
+  perfect:{label:'Parfait',bp:false,snr:120,echo:0,ulaw:false,
+    txt:'Canal idéal pleine bande · aucun bruit · aucun écho'},
+  pstn:{label:'RTC analogique',bp:true,snr:38,echo:0.2,ulaw:false,
+    txt:'Passe-bande 300–3 400 Hz · SNR 38 dB · écho hybride −14 dB (2 fils) · retard 3 ms'},
+  ulaw:{label:'RTC µ-law (56k)',bp:true,snr:38,echo:0.2,ulaw:true,
+    txt:'Passe-bande 300–3 400 Hz · codec G.711 µ-law 8 kHz · SNR 38 dB · écho −14 dB'},
+  wide:{label:'Hors norme',bp:false,snr:60,echo:0,ulaw:false,
+    txt:'Pleine bande jusqu\u2019à fs/2 · SNR 60 dB · réservé aux modulations maison'}
+};
+
+class LinePath{
+  constructor(fs){
+    this.fs=fs;
+    this.hp=new Biquad().hp(fs,300,0.707);
+    this.lp1=new Biquad().lp(fs,3400,0.707);
+    this.lp2=new Biquad().lp(fs,3400,0.707);
+    this.hold=0;this.acc=0;this.step=fs/8000;
+    this.prof=PROFILES.perfect;this.nAmp=0;this.uAmp=0;
+  }
+  setProfile(p){
+    this.prof=p;
+    this.nAmp=0.25*Math.pow(10,-p.snr/20);
+    this.hp.reset();this.lp1.reset();this.lp2.reset();this.hold=0;this.acc=0;
+  }
+  p(x){
+    if(this.prof.bp){x=this.hp.p(x);x=this.lp1.p(x);x=this.lp2.p(x);}
+    x+=this.nAmp*gauss();
+    if(this.uAmp)x+=this.uAmp*gauss();
+    if(this.prof.ulaw){
+      this.acc+=1;
+      if(this.acc>=this.step){this.acc-=this.step;this.hold=ulawDec(ulawEnc(x));}
+      return this.hold;
+    }
+    return x;
+  }
+}
+
+class Line{
+  constructor(fs){
+    this.fs=fs;this.ab=new LinePath(fs);this.ba=new LinePath(fs);
+    const D=Math.round(fs*0.003);
+    this.dA=new Float32Array(D);this.dB=new Float32Array(D);this.iA=0;this.iB=0;
+    this.prof=PROFILES.perfect;this.pickupOn=false;this.pickupAmp=0.30;
+  }
+  setProfile(key){this.prof=PROFILES[key];this.ab.setProfile(this.prof);this.ba.setProfile(this.prof);}
+  setUserNoise(db){const a=(db==null)?0:0.25*Math.pow(10,-db/20);this.ab.uAmp=a;this.ba.uAmp=a;}
+  echoA(tx){const d=this.dA;const v=d[this.iA];d[this.iA]=tx;this.iA=(this.iA+1)%d.length;return v*this.prof.echo;}
+  echoB(tx){const d=this.dB;const v=d[this.iB];d[this.iB]=tx;this.iB=(this.iB+1)%d.length;return v*this.prof.echo;}
+  noise(){return this.pickupOn?this.pickupAmp*gauss():0;}
+}
+
+class CentralOffice{
+  constructor(fs){
+    this.fs=fs;this.state='idle';this.ph=0;this.ph2=0;this.cad=0;this.ringCount=0;
+    this.det=new DtmfDet(fs,d=>this.onDigit(d));
+    this.a=null;this.b=null;this.caller=null;this.callee=null;this.number='';
+  }
+  seize(caller,callee){
+    this.caller=caller;this.callee=callee;
+    this.state='dialtone';this.det.reset();this.number='';this.ph=0;this.ph2=0;
+    jlog('—','CO : boucle '+caller.id+' fermée — tonalité 350+440 Hz (plan nord-américain)');
+  }
+  onDigit(d){
+    if(this.state==='dialtone'){this.state='collect';jlog('—','CO : tonalité coupée, collecte des chiffres');}
+    if(this.state==='collect'){this.number+=d;jlog('—','CO : DTMF décodé « '+d+' » ('+DTMF[d][0]+'+'+DTMF[d][1]+' Hz)');}
+  }
+  tickBlock(){
+    if(this.state==='collect'&&this.number.length>=3&&this.det.silMs>=700){
+      jlog('—','CO : numéro '+this.number+' — sonnerie vers '+(this.callee?this.callee.id:'(aucun abonné)'));
+      this.state='ringing';this.cad=0;this.ringCount=0;
+    }
+  }
+  toneToCaller(){
+    if(this.state==='dialtone'){
+      this.ph+=2*Math.PI*350/this.fs;if(this.ph>2*Math.PI)this.ph-=2*Math.PI;
+      this.ph2+=2*Math.PI*440/this.fs;if(this.ph2>2*Math.PI)this.ph2-=2*Math.PI;
+      return 0.1*Math.sin(this.ph)+0.1*Math.sin(this.ph2);
+    }
+    if(this.state==='ringing'){
+      const t=this.cad/this.fs;
+      if(t%6<2){
+        this.ph+=2*Math.PI*440/this.fs;if(this.ph>2*Math.PI)this.ph-=2*Math.PI;
+        this.ph2+=2*Math.PI*480/this.fs;if(this.ph2>2*Math.PI)this.ph2-=2*Math.PI;
+        return 0.1*Math.sin(this.ph)+0.1*Math.sin(this.ph2);
+      }
+    }
+    return 0;
+  }
+  tickSample(){
+    if(this.state==='ringing'){
+      const prev=this.cad/this.fs%6;
+      this.cad++;
+      const cur=this.cad/this.fs%6;
+      if(prev>=2&&cur<prev||this.cad===1){this.ringCount++;if(this.callee)this.callee.onRing();}
+    }
+  }
+  connect(){this.state='connected';
+    jlog('—','CO : '+(this.callee?this.callee.id:'?')+' décroche — circuit de conversation établi');}
+  release(){
+    if(this.state!=='idle'){
+      this.state='idle';
+      if(this.callee&&!this.callee.offhook&&this.callee.state==='RINGING'){
+        this.callee.state='IDLE';this.callee.rings=0;
+      }
+      this.caller=null;this.callee=null;
+      jlog('—','CO : libération de la ligne');
+    }
+  }
+}
+
+/* ---------------- modem ---------------- */
+/* ===== V.42 (LAPM) — correction d'erreur normative =====
+   HDLC : fanions 0x7E en continu, transparence par insertion de bit (un 0 après
+   cinq 1), FCS CRC-16-CCITT (x^16+x^12+x^5+1, réfléchi, init 0xFFFF, complété,
+   octet faible d'abord). LAPM : DLCI 0, trames I à contrôle étendu modulo 128,
+   fenêtre k=15, N401=128, RR/REJ, go-back-N sur REJ ou échéance T401.
+   Détection V.42 : le lien naît asynchrone ; l'appelant répète ODP (DC1),
+   le répondeur renvoie ADP ('E',DC1), puis bascule synchrone et SABME/UA.
+   Sans réponse en 750 ms : repli tampon, sans correction. */
+function crc16(buf,len){
+  let c=0xFFFF;
+  for(let i=0;i<len;i++){c^=buf[i];
+    for(let k=0;k<8;k++)c=(c&1)?((c>>>1)^0x8408):(c>>>1);}
+  return (~c)&0xFFFF;
+}
+class HdlcTx{
+  constructor(){this.q=[];this.cur=null;this.bi=0;this.ones=0;this.fi=0;this.stuff=false;}
+  frame(bytes){
+    const n=bytes.length,f=new Uint8Array(n+2);f.set(bytes);
+    const c=crc16(f,n);f[n]=c&0xFF;f[n+1]=(c>>8)&0xFF;
+    this.q.push(f);
+  }
+  nextBit(){
+    if(this.stuff){this.stuff=false;this.ones=0;return 0;}
+    if(!this.cur){
+      const b=(0x7E>>this.fi)&1;this.fi++;
+      if(this.fi>=8){this.fi=0;if(this.q.length){this.cur=this.q.shift();this.bi=0;this.ones=0;}}
+      return b;
+    }
+    const b=(this.cur[this.bi>>3]>>(this.bi&7))&1;
+    this.bi++;
+    if(b===1){this.ones++;if(this.ones===5)this.stuff=true;}else this.ones=0;
+    if(this.bi>=this.cur.length*8){this.cur=null;this.fi=0;}
+    return b;
+  }
+}
+class HdlcRx{
+  constructor(onFrame){this.onFrame=onFrame;this.p1=0;this.cb=0;this.nb=0;
+    this.buf=new Uint8Array(600);this.bl=0;this.in=false;this.crcErr=0;this.aborts=0;}
+  bit(v){
+    if(!this.in)return;
+    this.cb=(this.cb>>1)|(v?0x80:0);
+    if(++this.nb===8){if(this.bl<this.buf.length)this.buf[this.bl++]=this.cb;this.nb=0;this.cb=0;}
+  }
+  push(b){
+    if(b===1){
+      if(++this.p1>=7){if(this.in&&(this.bl||this.nb))this.aborts++;this.in=false;this.bl=0;this.nb=0;this.cb=0;this.p1=7;}
+      return;
+    }
+    if(this.p1===6){this.flag();this.p1=0;return;}          /* 01111110 */
+    if(this.p1===5){for(let i=0;i<5;i++)this.bit(1);this.p1=0;return;} /* 0 inséré : retiré */
+    for(let i=0;i<this.p1;i++)this.bit(1);
+    this.p1=0;this.bit(0);
+  }
+  flag(){
+    /* le 0 d'ouverture du fanion est indiscernable d'un bit de données avant
+       l'arrivée des six 1 : chaque trame traîne exactement UN bit 0 excédentaire */
+    const propre=this.nb===0||(this.nb===1&&(this.cb&0x80)===0);
+    if(this.in&&propre&&this.bl>=4){
+      const n=this.bl-2,c=crc16(this.buf,n);
+      if((this.buf[n]|(this.buf[n+1]<<8))===c)this.onFrame(this.buf.subarray(0,n));
+      else this.crcErr++;
+    }else if(this.in&&(this.bl||this.nb>1))this.crcErr++;
+    this.in=true;this.bl=0;this.nb=0;this.cb=0;
+  }
+}
+class Lapm{
+  constructor(m){
+    this.m=m;this.fs=m.fs;this.role=m.role;
+    this.st='DET';this.sync=false;this.up=false;this.adpSent=false;this.seen=0;this.odpN=0;
+    this.tHx=new HdlcTx();this.rHx=new HdlcRx(f=>this.onFrame(f));
+    this.vs=0;this.vr=0;this.va=0;this.k=15;this.N401=128;
+    this.txq=[];this.sent=[];this.rej=false;this.ackT=0;
+    this.t401=0;this.n400=0;this.detT=0;this.adpT=0;this.retx=0;
+    this.crcW=0;this.errPs=0;this.errBase=0;this.t403=0;this.rxAge=0;
+  }
+  start(){
+    this.detT=Math.round(this.fs*0.75);
+    if(this.role==='caller'){
+      let s='';for(let i=0;i<24;i++)s+='\x11';
+      this.m.tx.send(s);
+      jlog(this.m.id,'V.42 : ODP émis (DC1 répété) — détection du correcteur distant');
+    }
+  }
+  asyncByte(b){
+    if(this.st==='DET'){
+      const v=b&0x7F;
+      if(this.role==='answer'){
+        if(v===0x11&&++this.odpN>=2&&!this.adpSent){
+          this.adpSent=true;
+          let s='';for(let i=0;i<10;i++)s+='\x45\x11';
+          this.m.tx.send(s);
+          this.goSyncRx();/* l'appelant va parler HDLC dès qu'il verra l'ADP : oreille sync tout de suite */
+          this.adpT=Math.round(this.fs*0.06);/* vidange de l'ADP (20 octets) puis TX sync */
+          jlog(this.m.id,'V.42 : ODP reçu — ADP renvoyé, oreille HDLC armée');
+        }
+      }else{
+        this.seen=((this.seen<<8)|v)&0xFFFF;
+        if(this.seen===0x4511){this.goSync();this.sendSABME();}
+      }
+      return;
+    }
+    if(this.st==='ASYNC')this.m.onByte(b);
+  }
+  goSyncRx(){
+    if(this.m.rx.bitSink)return;
+    this.m.rx.bitSink=b=>this.rHx.push(b);
+  }
+  goSync(){
+    this.sync=true;this.st='SETUP';
+    this.m.tx.q.length=0;this.m.tx.bits=null;
+    this.m.tx.bitSrc=()=>this.tHx.nextBit();
+    this.goSyncRx();
+    jlog(this.m.id,'V.42 : bascule en mode synchrone HDLC (fanions 0x7E, CRC-16)');
+  }
+  fallAsync(msg){
+    this.st='ASYNC';this.sync=false;this.up=false;
+    this.m.tx.bitSrc=null;this.m.rx.bitSink=null;
+    if(this.txq.length){let s='';for(const b of this.txq)s+=String.fromCharCode(b);this.txq=[];this.m.tx.send(s);}
+    jlog(this.m.id,'V.42 : '+msg+' — repli tampon (sans correction)','W');
+  }
+  sendSABME(){this.tHx.frame(Uint8Array.from([0x03,0x7F]));this.t401=Math.round(this.fs*0.4);}
+  mkI(ns,data){
+    const f=new Uint8Array(3+data.length);
+    f[0]=0x03;f[1]=(ns<<1)&0xFE;f[2]=(this.vr<<1)&0xFE;
+    f.set(data,3);return f;
+  }
+  sframe(t){this.tHx.frame(Uint8Array.from([0x01,t,(this.vr<<1)&0xFE]));}
+  ack(nr){
+    let n=0;
+    while(this.sent.length&&this.sent[0].ns!==nr){this.sent.shift();n++;}
+    if(n)this.n400=0;
+    this.t401=this.sent.length?Math.round(this.fs*0.35):0;
+    this.va=nr;
+  }
+  onFrame(f){
+    if(f.length<2)return;
+    this.rxAge=0;                                  /* toute trame valide prouve la vie */
+    const c1=f[1];
+    if((c1&1)===0){                                  /* trame I */
+      if(f.length<3)return;
+      const ns=c1>>1,nr=f[2]>>1;
+      this.ack(nr);
+      if(this.st!=='UP')return;
+      if(ns===this.vr){
+        this.vr=(this.vr+1)%128;this.rej=false;
+        const info=f.subarray(3);
+        for(let i=0;i<info.length;i++){this.m.rx.rxBytes++;this.m.onByte(info[i]);}
+        this.ackT=Math.round(this.fs*0.02);
+      }else if(!this.rej){
+        this.rej=true;this.sframe(0x09);
+        jlog(this.m.id,'V.42 : trame hors séquence — REJ N(R)='+this.vr,'W');
+      }
+    }else if((c1&3)===1){                            /* trame S */
+      if(f.length<3)return;
+      const nr=f[2]>>1;
+      this.ack(nr);
+      if((c1&0x0F)===0x09){                          /* REJ */
+        let n=0;for(const s of this.sent){this.tHx.frame(this.mkI(s.ns,s.data));n++;}
+        if(n){this.retx+=n;this.t401=Math.round(this.fs*0.35);
+          jlog(this.m.id,'V.42 : REJ reçu — '+n+' trame(s) retransmise(s)','W');}
+      }
+    }else{                                           /* trame U */
+      if(c1===0x7F){                                 /* SABME */
+        if(!this.sync)this.goSync();/* une trame HDLC valide prouve le pair synchrone */
+        this.vs=0;this.vr=0;this.va=0;this.sent=[];this.rej=false;
+        this.tHx.frame(Uint8Array.from([0x01,0x73]));
+        if(this.st!=='UP'){this.st='UP';this.up=true;
+          jlog(this.m.id,'V.42 : SABME reçu — UA renvoyé, LAPM ÉTABLI (mod 128, fenêtre '+this.k+')','C');}
+      }else if(c1===0x73&&this.st!=='UP'){           /* UA */
+        if(!this.sync)this.goSync();
+        this.st='UP';this.up=true;this.t401=0;this.n400=0;
+        jlog(this.m.id,'V.42 : UA reçu — LAPM ÉTABLI (mod 128, fenêtre '+this.k+')','C');
+      }else if(c1===0x53){this.tHx.frame(Uint8Array.from([0x01,0x73]));}
+    }
+  }
+  write(str){
+    for(let i=0;i<str.length;i++)this.txq.push(str.charCodeAt(i)&0xFF);
+    this.pump();
+  }
+  pump(){
+    while(this.st==='UP'&&this.txq.length&&this.sent.length<this.k){
+      const data=Uint8Array.from(this.txq.splice(0,Math.min(this.N401,this.txq.length)));
+      const ns=this.vs;this.vs=(this.vs+1)%128;
+      this.sent.push({ns,data});
+      this.tHx.frame(this.mkI(ns,data));
+      this.ackT=0;
+      if(!this.t401)this.t401=Math.round(this.fs*0.35);
+    }
+  }
+  tick(){
+    if(this.adpT>0&&--this.adpT===0&&!this.sync)this.goSync();/* hors branche : survit aux transitions d'état */
+    if(this.st==='DET'){
+      if(this.detT>0&&--this.detT===0&&!this.sync)this.fallAsync('pas de réponse en 750 ms');
+      return;
+    }
+    if(this.st==='SETUP'&&this.t401>0&&--this.t401===0){
+      /* entre deux bouts qui se savent V.42, jamais de repli : on re-SABME sans fin,
+         le signe-de-vie du modem tranchera (retrain) si rien ne passe */
+      if(++this.n400>4)this.n400=0;
+      this.sendSABME();
+      return;
+    }
+    if(this.st!=='UP')return;
+    this.pump();
+    if(this.ackT>0&&--this.ackT===0)this.sframe(0x01);
+    /* T403 : supervision d'inactivité — RR périodique au repos ; 3 s sans AUCUNE
+       trame valide -> lien déclaré perdu (arme le signe-de-vie côté modem) */
+    if(++this.t403>=this.fs){this.t403=0;if(this.sent.length===0&&this.txq.length===0)this.sframe(0x01);}
+    if(++this.rxAge>this.fs*3){
+      this.rxAge=0;this.up=false;this.st='SETUP';this.n400=0;
+      jlog(this.m.id,'V.42 : T403 — 3 s sans trame valide, lien déclaré perdu','W');
+      this.sendSABME();
+    }
+    if(this.t401>0&&--this.t401===0){
+      if(++this.n400>6){
+        jlog(this.m.id,'V.42 : T401 x6 sans acquittement — rétablissement (SABME)','W');
+        this.st='SETUP';this.up=false;this.n400=0;this.sendSABME();return;
+      }
+      let n=0;for(const s of this.sent){this.tHx.frame(this.mkI(s.ns,s.data));n++;}
+      this.retx+=n;this.t401=Math.round(this.fs*0.35);
+      if(n)jlog(this.m.id,'V.42 : T401 échu — '+n+' trame(s) retransmise(s)','W');
+    }
+    if(++this.crcW>=this.fs){
+      this.crcW=0;
+      const tot=this.rHx.crcErr+this.rHx.aborts;
+      this.errPs=tot-this.errBase;this.errBase=tot;
+    }
+  }
+}
+/* échelle de débit V.BoOm (esprit V.34) : seuils mesurés au banc EVM avec égaliseur */
+const BOOM_LADDER=[4,16,64,256,1024];
+const BOOM_UP=[15,22,28,37];      /* SNR démod requis 2 s pour monter DEPUIS l'indice i */
+const BOOM_DN=[12.5,20,26,33];  /* plancher de l'indice i+1 : 300 ms dessous -> repli.
+   Attention : l'EVM dirigée par les décisions SATURE à d^2/6 par barreau
+   (11,8 / 18,0 / 24,1 / 30,1 dB en 16/64/256/1024-QAM) — chaque plancher vit au-dessus.
+   1024-QAM (~37 dB requis) n'est tenable que sur ligne dorée : c'est voulu, comme
+   le 33,6 k de V.34. 2048+ : impossible ici (11 bits impair -> constellation en croix,
+   et il faudrait 40+ dB). */
+class Modem{
+  constructor(id,fs,co,line){
+    this.id=id;this.fs=fs;this.co=co;this.line=line;
+    this.state='IDLE';this.timer=0;this.role=null;this.offhook=false;
+    this.dataMode=false;this.sReg={0:0};this.rings=0;
+    this.tx=null;this.rx=null;
+    this.dtmf=new DtmfGen(fs,0.25);
+    this.ansam=new Ansam(fs,0.25);
+    this.ansDet=new AnsDet(fs);
+    this.rxLev=0;this.txLev=0;this.dcdT=0;this.lossT=0;this.v8T=0;this.deadT=0;
+    this.greeted=false;this.replied=false;this.escT=0;
+    this.pend=[];this.hinted=false;this.lastNum='';
+    this.listenAuto=true;this.rbT=0;
+    this.maxProto='BM';this.link=PROTOS['21'];this.negProto=null;
+    this.cmBuf='';this.cmGot=false;this.jmGot=false;this.jmSent=0;this.trT=0;this.dsT=0;
+    this.ui=null;this.rxLine='';
+    this.direct=false;this.port=null;this.rxBiq=null;
+    this.dtmfRing=new DtmfDet(fs,()=>{});/* ligne directe : « sonnerie » déduite du DTMF entendu */
+    /* V.BoOm : négociation hors bande (signature 5500 côté répondeur, marque 4400+6800 côté appelant) */
+    this.boom=false;this.boomRs=0;this.boomFail=0;this.negBoom=false;
+    this.markSent=false;this.markT=0;this.mkP1=0;this.mkP2=0;this.sgP=0;
+    this.sigDet=new SigTone(fs,5500);this.mk1=new SigTone(fs,4400);this.mk2=new SigTone(fs,6800);
+  }
+  print(txt,cls){if(this.ui)this.ui.print(txt,cls);}
+  bands(){
+    if(this.role==='caller'){
+      this.tx=new FskTx(this.fs,980,1180,300,0.25);
+      this.rx=new FskRx(this.fs,1650,1850,300,b=>this.onByte(b));
+      this.chTx='canal 1 (980/1180 Hz)';this.chRx='canal 2 (1650/1850 Hz)';
+      this.setRxBand('hp',1415);
+    }else{
+      this.tx=new FskTx(this.fs,1650,1850,300,0.25);
+      this.rx=new FskRx(this.fs,980,1180,300,b=>this.onByte(b));
+      this.chTx='canal 2 (1650/1850 Hz)';this.chRx='canal 1 (980/1180 Hz)';
+      this.setRxBand('lp',1415);
+    }
+  }
+  /* séparateur de canaux Butterworth 6e ordre devant le récepteur : indispensable
+     sur médium partagé (carte son, écho local à 0 dB), inoffensif sur ligne virtuelle.
+     Les détecteurs de tonalités (ansDet, t980/t1650/u150, dtmfRing) restent en signal brut. */
+  setRxBand(kind,f,Qs){
+    const Q=Qs||[0.518,0.707,1.932];/* défaut : Butterworth 6e ordre (V.21/V.22) */
+    this.rxBiq=Q.map(q=>kind==='lp'?new Biquad().lp(this.fs,f,q):new Biquad().hp(this.fs,f,q));
+  }
+  rxFilt(x){const B=this.rxBiq;if(!B)return x;for(let k=0;k<B.length;k++)x=B[k].p(x);return x;}
+  /* --- commandes AT --- */
+  input(lineTxt){
+    const s=lineTxt.trim();
+    if(this.dataMode){
+      if(this.escT>0){this.pend.push(s);this.print(s,'dim');return;}
+      if(s==='+++'){this.escT=Math.round(this.fs*1.0);this.pend=[];this.print('+++','dim');return;}
+      this.print('\u00bb '+s,'dim');
+      this.userSend(s+'\r\n');
+      if(!this.hinted&&/^AT/i.test(s)){this.hinted=true;
+        this.print('(mode données : cette ligne part sur la ligne téléphonique — pour commander : +++ puis ATH, ou le bouton Raccrocher)','dim');}
+      return;
+    }
+    this.print('> '+s.toUpperCase());
+    this.doAT(s.toUpperCase());
+  }
+  doAT(s){
+    if(!s.startsWith('AT')){this.print('ERROR','warn');return;}
+    const b=s.slice(2).replace(/\s+/g,'');
+    let m;
+    if(b===''||b==='E0'||b==='E1'||b==='Z'){this.print('OK','ok');return;}
+    if(b==='I'){this.print('SOFTMODEM COEUR v0.3 — V.21/V.22/V.22bis/V.BoOm','ok');this.print('OK','ok');return;}
+    if(b==='H'||b==='H0'){jlog(this.id,'raccrochage demandé (ATH)');this.hangup(true);this.print('OK','ok');return;}
+    if(b==='O'||b==='O0'){
+      if(this.offhook&&this.state==='DATA'){this.dataMode=true;this.print('CONNECT 300/V.21','ok');}
+      else this.print('ERROR','warn');
+      return;
+    }
+    if(b==='A'){
+      if(this.state==='RINGING'){this.print('OK','ok');this.answer();}
+      else if(this.direct&&!this.offhook){this.print('OK','ok');this.answer();}
+      else this.print('ERROR','warn');
+      return;
+    }
+    if(m=b.match(/^D[TP]?([\d*#]+)$/)){this.dial(m[1]);return;}
+    if(m=b.match(/^S0=(\d+)$/)){this.sReg[0]=+m[1];this.listenAuto=(+m[1])>0;this.print('OK','ok');
+      jlog(this.id,'réponse automatique '+(+m[1]>0?'armée (S0='+m[1]+')':'désarmée'));return;}
+    if(b==='S0?'){this.print(String(this.sReg[0]).padStart(3,'0'));this.print('OK','ok');return;}
+    if(m=b.match(/^M([012])$/)){setMonMode(+m[1]);this.print('OK','ok');return;}
+    if(m=b.match(/^L([0-3])$/)){setVolume([0,15,40,80][+m[1]]);this.print('OK','ok');return;}
+    this.print('ERROR','warn');
+  }
+  dial(num){
+    if(this.offhook){this.print('ERROR','warn');return;}
+    if(!this.direct&&this.co.state!=='idle'){
+      this.print('— ligne occupée —','dim');
+      jlog(this.id,'appel refusé — ligne occupée (collision)','W');
+      return;
+    }
+    this.offhook=true;this.role='caller';this.bands();this.ansDet.reset();this.dtmfRing.reset();
+    this.lastNum=num;this.rbT=0;this.negRst();
+    if(this.direct)jlog(this.id,'ligne directe (connecteur audio) — numérotation à l\u2019aveugle, sans central');
+    else this.co.seize(this,this.peer());
+    this.state='DIALTONE';this.timer=Math.round(this.fs*0.9);
+    this.pendingNum=num;
+    jlog(this.id,'décroché — numérotation de '+num+' demandée');
+  }
+  onRing(){
+    if(this.offhook)return;
+    this.rings++;this.state='RINGING';
+    this.print('RING','warn');
+    jlog(this.id,'sonnerie entrante ('+this.rings+')');
+    if(this.listenAuto)this.answer();
+  }
+  answer(){
+    this.offhook=true;this.role='answer';this.bands();this.rx.gate=true;this.negRst();this.dtmfRing.reset();
+    if(this.direct)jlog(this.id,'ligne directe — décroché');
+    else this.co.connect();
+    this.state='ANSWER_SIL';this.timer=Math.round(this.fs*2.15);
+    jlog(this.id,'décroché — silence V.25 puis ANSam');
+  }
+  connectNow(){
+    this.dataMode=true;this.state='DATA';this.lossT=0;this.hinted=false;this.pend=[];
+    if(this.rx)this.rx.gate=true;
+    this.capLow=false;this.redialT=0;this.rdN=0;
+    this.print('— liaison établie · '+this.link.bps+' bit/s ('+this.link.label+') —','ok');
+    if(this.boom)this.boomFail=0;
+    jlog(this.id,'CONNECT '+this.link.bps+' — '+this.chRx+' verrouillée');
+    onCarrierUp();
+    if(GREET&&this.role==='caller'&&!this.greeted){
+      this.greeted=true;
+      this.greetMsg='SALUT, ICI '+this.id+' - LIAISON '+this.link.label+' A '+this.link.bps+' BPS.\r\n';this.greetT=Math.round(this.fs*0.35);
+    }
+  }
+  carrierLost(){
+    this.print('— porteuse perdue —','warn');
+    this.print('NO CARRIER','warn');
+    jlog(this.id,'S10 écoulée — NO CARRIER, raccrochage','W');
+    this.hangup(false);
+  }
+  hangup(){
+    this.offhook=false;this.dataMode=false;this.state='IDLE';
+    if(this.tx)this.tx.stop();
+    this.ansam.stop();this.dtmf.done=true;this.role=null;this.rings=0;
+    this.greeted=false;this.replied=false;this.rbT=0;
+    this.negRst();this.link=PROTOS['21'];
+    if(!this.direct)this.co.release();
+    onCarrierDown();
+  }
+  peer(){const p=this.co.a===this?this.co.b:this.co.a;return (p&&!p.direct)?p:null;}
+  negRst(){this.trT=0;this.dsT=0;this.subT=0;this.txT=0;this.txPh='';this.rtT=0;this.rtN=0;this.negRate=1200;this.fdT=0;this.okT=0;this.cmBuf='';
+    this.boom=false;this.negBoom=false;this.markSent=false;this.markT=0;this.sigDet.reset();this.mk1.reset();this.mk2.reset();}
+  wantBoom(){return PROTOS[this.maxProto].rank>=4&&this.boomFail<2;}
+  hiName(){return this.boom?'16-QAM BoOm':'2400';}
+  loName(){return this.boom?'QPSK BoOm':'1200';}
+  mkBoomLink(qam){
+    return {code:'BM',label:'V.BoOm'+(qam?'':' (QPSK)'),bps:(qam?4:2)*this.boomRs,
+      baud:this.boomRs,mod:qam?'16-QAM':'QPSK diff.',rank:4};
+  }
+  txStep(){
+    this.txT++;const F=this.fs;
+    switch(this.txPh){
+      case 'S1':
+        if(this.txT>=Math.round(F*0.100)){
+          this.txT=0;
+          if(this.role==='answer'||this.rtRole==='rsp'){this.txPh='SB500';this.tx.setMode('sb1');}
+          else{this.txPh='SB';this.tx.setMode('sb1');}
+        }
+        break;
+      case 'SB500':
+        if(this.txT>=Math.round(F*0.500)){
+          this.txT=0;
+          if(this.negRate===2400){this.txPh='Q200';this.tx.setQam(true);
+            jlog(this.id,'émission 16-QAM — uns brouillés à 2400 (200 ms)');}
+          else{this.txPh='DONE1200';this.tx.setMode('data');}
+        }
+        break;
+      case 'SB756':
+        if(this.txT>=Math.round(F*0.756)){
+          this.txT=0;
+          if(this.negRate===2400){this.txPh='Q200';this.tx.setQam(true);
+            jlog(this.id,'émission 16-QAM — uns brouillés à 2400 (200 ms)');}
+          else{this.txPh='DONE1200';this.tx.setMode('data');
+            jlog(this.id,'émission : fonctionnement normal (1200)');}
+        }
+        break;
+      case 'Q200':
+        if(this.txT>=Math.round(F*0.200)){
+          this.txT=0;this.txPh='DONE2400';this.tx.setMode('data');
+          jlog(this.id,'émission : fonctionnement normal (2400)');
+        }
+        break;
+    }
+  }
+  userSend(s){
+    if(this.boom&&this.lapm&&this.lapm.st!=='ASYNC')this.lapm.write(s);
+    else this.tx.send(s);
+  }
+  rateTick(){
+    const fs=this.fs,rx=this.rx;
+    this.rClk=(this.rClk||0)+1;
+    if(this.lapm){
+      if(!this.lapmStarted){this.lapmStarted=true;this.lapm.start();}
+      this.lapm.tick();
+      /* signe de vie : un LAPM établi qui meurt (T401xN, SABME muets) alors que la
+         porteuse est saine trahit un désaccord de constellation indétectable au
+         niveau octet -> retrain modem (reset 16-QAM des deux côtés) */
+      if(this.lapm.up){this.lapmWasUp=true;this.lapmDownT=0;}
+      else if(this.lapmWasUp&&this.rx.dcd){
+        this.lapmDownT=(this.lapmDownT||0)+1;
+        if(this.lapmDownT>fs*4){/* laisser LAPM re-SABME avant de retrain */
+          this.lapmWasUp=false;this.lapmDownT=0;
+          if(this.rtN>=3){jlog(this.id,'liaison V.42 irrécupérable — abandon','W');this.carrierLost();return;}
+          this.startRetrain('liaison V.42 perdue malgré porteuse — resynchronisation');return;
+        }
+      }
+    }
+    if(this.rPenT>0&&--this.rPenT===0)this.rPen=0;
+    const idx=BOOM_LADDER.indexOf(rx.M);
+    rx.qLoss=[5,6,12,19,26][idx];
+    const q=rx.snrDb();
+    /* chien de garde : des trames en échec sous un SNR "SAIN" trahissent une
+       désynchronisation de constellation — un QPSK tranché en 256-QAM tombe pile
+       sur les coins, l'EVM ne voit rien. Si l'EVM est malade, l'échelle s'en
+       occupe déjà : le chien se tait. (V.34 §11 : renégociation sur taux d'erreur) */
+    this.fWc=(this.fWc||0)+1;
+    if(this.fWc>=fs){
+      this.fWc=0;
+      const eNow=(this.lapm&&this.lapm.sync)?(this.lapm.rHx.crcErr+this.lapm.rHx.aborts):rx.ferr;
+      const fe=eNow-(this.fW0||0);this.fW0=eNow;
+      /* en QPSK il n'y a plus d'échelon en dessous : le chien compte sans condition */
+      const sain=(this.lapm&&this.lapm.sync)?true:(idx===0?true:q>=BOOM_DN[idx-1]+2);/* sous LAPM une tempête CRC soutenue signe la désynchro, EVM ou pas */
+      /* fenêtres de bascule : les marqueurs (les nôtres ET ceux du voisin de bande)
+         fuient de la bouillie qui compte en ferr — un booléen par seconde ratait les
+         rafales à cheval sur deux comptages ; on exige 1,2 s de calme depuis le
+         dernier hold avant de croire le taux d'erreur */
+      const calm=(this.holdAge||0)>fs*1.2;
+      if(fe>=60&&sain&&calm)this.fBadS=(this.fBadS||0)+1;else this.fBadS=0;/* 60/s : un zombie en crache des centaines */
+      this.fePrev=this.feLast||0;
+      this.feLast=calm?fe:0;
+      if(this.fBadS>=2){
+        this.fBadS=0;
+        if(this.rtN>=3){
+          jlog(this.id,'3 retrains sans amélioration — abandon (politique constructeur)','W');
+          this.armRedial();this.carrierLost();return;
+        }
+        this.startRetrain('trames en échec malgré porteuse — resynchronisation');return;
+      }
+    }
+    /* réponse aux marqueurs du distant : il pilote NOTRE émetteur */
+    if(this.rSwT>0){if(--this.rSwT===0)this.tx.setMode('data');}
+    if(this.rHold>0)this.rHold--;
+    const ti=BOOM_LADDER.indexOf(this.tx.C.M);
+    if(this.rSwT===0&&this.rHold===0){
+      if(this.dUp.held(fs,60)&&ti<BOOM_LADDER.length-1){
+        this.tx.setConst(BOOM_LADDER[ti+1]);this.tx.setMode('sb1');
+        this.rSwT=Math.round(fs*0.15);this.rHold=Math.round(fs*0.4);
+        jlog(this.id,'marqueur débit+ reçu — émission passée en '+this.tx.C.M+'-QAM ('+(this.tx.C.b*this.boomRs)+' bit/s)');
+      }else if(this.dDn.held(fs,60)&&ti>0){
+        this.tx.setConst(BOOM_LADDER[ti-1]);this.tx.setMode('sb1');
+        this.rSwT=Math.round(fs*0.15);this.rHold=Math.round(fs*0.4);
+        jlog(this.id,'marqueur débit- reçu — émission repliée en '+this.tx.C.M+'-QAM ('+(this.tx.C.b*this.boomRs)+' bit/s)','W');
+      }
+    }
+    /* octets suspendus pendant les fenêtres de bascule (marqueurs = faux octets) */
+    rx.hold=(this.rWait>0)||(this.rReqT>0)||this.dUp.cnt>fs*0.012||this.dDn.cnt>fs*0.012;
+    if(rx.hold||this.rSwT>0)this.holdAge=0;else this.holdAge=(this.holdAge||0)+1;
+    /* notre récepteur : demandes et confirmation */
+    if(this.rWait>0){
+      this.rWait--;
+      if(rx.ones32){
+        this.rWait=0;this.link.bps=rx.C.b*this.boomRs;
+        if(rx.M>this.rWaitM)this.rUpAt=this.rClk;
+        jlog(this.id,'réception confirmée en '+rx.M+'-QAM — '+this.link.bps+' bit/s','C');
+        this.rCool=Math.round(fs*2.5);/* laisser boîte de vitesses et FFE se tasser avant de viser plus haut */
+      }else if(this.rWait===0){
+        if(this.rReqTarget>this.rWaitM){
+          rx.setConst(this.rWaitM);
+          jlog(this.id,'montée non confirmée — retour en '+this.rWaitM+'-QAM','W');
+        }else{
+          jlog(this.id,'repli non confirmé — je reste en '+rx.M+'-QAM (côté sûr : le bas)','W');
+        }
+        this.rCool=Math.round(fs*2);
+      }
+    }else if(this.rReqT>0){
+      if(--this.rReqT===0){
+        this.tx.setMode('data');
+        this.rWaitM=rx.M;rx.setConst(this.rReqTarget);this.rWait=Math.round(fs*0.5);
+        rx.evm2S=Math.max(rx.evm2S,0.005);/* incertitude déclarée : rétrograde en gear 6 (vif mais calme) — jamais en 1re, ses gains pleins noieraient l'échelon naissant */
+      }
+    }else if(this.rCool>0){this.rCool--;}
+    else if(this.tx.mode==='data'&&this.rSwT===0){
+      const qS=rx.snrSlowDb();
+      if(idx<BOOM_LADDER.length-1&&qS>=BOOM_UP[idx]+(this.rPen||0)){
+        if(++this.rGood>=Math.round(fs*2)){
+          this.rGood=0;this.rReqTarget=BOOM_LADDER[idx+1];
+          this.tx.setMode('u0');this.rReqT=Math.round(fs*0.1);
+          jlog(this.id,'SNR moyen '+qS.toFixed(1)+' dB stable 2 s — demande de montée en '+this.rReqTarget+'-QAM (marqueur débit+)');
+        }
+      }else this.rGood=Math.max(0,this.rGood-6);/* micro-creux tolérés : décroissance, pas de reset */
+      const grace=this.rUpAt>=0&&(this.rClk-this.rUpAt)<fs*2;/* arrivée : l'EVM transitoire ne juge pas */
+      this.rGrace=grace;
+      /* barre trames 25/s : le sommet non codé vit avec un filet d'erreurs (10-20/s),
+         comme le 33,6k de V.34 — c'est le rôle de V.42 (palier 3) de l'éponger */
+      /* une rafale isolée (hoquet audio du navigateur, glitch) ne condamne pas :
+         il faut deux secondes calmes >=25 err/s consécutives, ou une >=80 */
+      const feBad=((this.feLast||0)>=250)||((this.feLast||0)>=25&&(this.fePrev||0)>=25);
+      if(idx>0&&!grace&&(q<BOOM_DN[idx-1]||feBad)){
+        /* deux juges pour descendre : l'EVM sous le plancher, OU un échelon qui
+           casse >=25 trames/s hors fenêtres — la zone morte de la saturation EVM
+           (lecture coincée juste au-dessus du plancher) n'échappe pas au second */
+        if(++this.rBadT>=Math.round(fs*0.3)){
+          this.rBadT=0;this.rReqTarget=BOOM_LADDER[idx-1];
+          this.tx.setMode('u3');this.rReqT=Math.round(fs*0.1);
+          /* récidive : un échelon qui nous a rejetés en <10 s voit sa barre monter (+1,5 dB, max +6, oubli 60 s) */
+          if(this.rUpAt>=0&&this.rClk-this.rUpAt<fs*10){
+            this.rPen=Math.min(6,(this.rPen||0)+3);this.rPenT=Math.round(fs*20);
+            jlog(this.id,'échelon instable — barre de montée pénalisée à +'+this.rPen.toFixed(1)+' dB pour 20 s','W');
+          }
+          jlog(this.id,'SNR '+q.toFixed(1)+' dB sous plancher — repli en '+this.rReqTarget+'-QAM demandé (marqueur débit-)','W');
+        }
+      }else this.rBadT=0;
+    }
+  }
+  startRetrain(reason){
+    /* V.22bis §6.5 (spandsp) : le demandeur repart en S1 ; le distant détecte S1 et réciproque.
+       Entre deux modems bis le retrain aboutit TOUJOURS à 2400. */
+    this.rtN=(this.rtN||0)+1;
+    jlog(this.id,reason+' — RETRAIN ('+this.rtN+'/3) : S1 émis, ré-entraînement','W');
+    this._retrainCommon('req');
+  }
+  armRedial(){
+    if(this.role!=='caller'||this.boom)return;
+    const first=this.negRate===2400&&!this.capLow&&(this.rdN||0)===0;
+    const retry=this.capLow&&(this.rdN||0)<2;
+    if(first||retry){
+      this.rdN=(this.rdN||0)+1;
+      this.redialT=Math.round(this.fs*4.5);
+      jlog(this.id,(first?'échec à 2400 — recomposition en repli 1200':'échec du rappel — nouvelle tentative')+' dans 4,5 s (politique constructeur)','W');
+    }
+  }
+  joinRetrain(){
+    this.rtN=(this.rtN||0)+1;
+    jlog(this.id,'S1 reçu en pleine liaison — retrain accepté ('+this.rtN+'/3) : S1 renvoyé','W');
+    this._retrainCommon('rsp');
+  }
+  _retrainCommon(role){
+    this.state='R_SCR';this.subT=0;this.trT=0;this.lossT=0;this.rtT=0;this.rtRole=role;
+    this.negRate=2400;
+    this.tx.setQam(false);this.tx.setMode('s1');this.txT=0;this.txPh='S1';
+    this.rx.qam=false;this.rx.gate=false;this.rx.s1Seen=false;this.rx.s1Cnt=0;
+    this.rx.lastQa=-1;this.rx.ones4=0;this.rx.ones32=false;
+    if(this.boom){
+      if(this.lapm){
+        this.lapm.st='SETUP';this.lapm.up=false;this.lapm.n400=0;this.lapm.sent=[];this.lapm.rej=false;
+        if(!this.lapm.sync)this.lapm.goSync();
+        this.lapm.sendSABME();/* re-négociation rapide : les deux bouts se savent V.42 */
+      }
+      this.tx.setConst(16);this.rx.setConst(16);this.rx.hold=false;
+      this.rGood=0;this.rBadT=0;this.rCool=0;this.rWait=0;this.rReqT=0;this.rSwT=0;this.rHold=0;
+      this.fWc=0;this.fW0=this.rx.ferr;this.fBadS=0;this.holdAge=0;
+      this.link.bps=4*this.boomRs;
+    }
+  }
+  beginSwitch(){
+    this.tx.stop();
+    this.state='SWITCH';this.timer=Math.round(this.fs*0.075);
+    jlog(this.id,'bascule vers '+PROTOS[this.negProto].label+' — 75 ms de silence');
+  }
+  setupProtoLink(){
+    const fam22=PROTOS[this.maxProto].rank>=2;
+    const boom=this.negBoom&&this.wantBoom();
+    this.negRate=1200;this.bisCap=(PROTOS[this.maxProto].rank>=3&&!this.capLow)||boom;this.rtN=0;this.rtRole='';
+    this.trT=0;this.dsT=0;this.subT=0;this.txT=0;this.txPh='';this.fdT=0;
+    if(boom){
+      /* V.BoOm : la machine d'états V.22bis, homothétique — Rs = fs/7 ou fs/8 (entier),
+         porteuses fs/8 (bas, appelant) et 2,5·Rs (haut, répondeur), RRC alpha = 0,25 */
+      this.boom=true;
+      const Rs=Math.round(this.fs/6);/* 8000 Bd @48k, 7350 @44,1k : la bande entière travaille */
+      this.boomRs=Rs;
+      const fcL=0.72*Rs,fcH=0.96*(this.fs/2)-0.625*Rs;
+      /* plan : bas [0,15..1,4]Rs, garde 0,29 Rs, haut jusqu'à 98 % de Nyquist */
+      const ftx=this.role==='answer'?fcH:fcL,frx=this.role==='answer'?fcL:fcH;
+      this.tx=new PskTx(this.fs,ftx,0.25,Rs,0.25,12);
+      this.rx=new PskRx(this.fs,frx,b=>this.lapm?this.lapm.asyncByte(b):this.onByte(b),Rs,0.25,12);
+      this.lapm=new Lapm(this);this.lapmStarted=false;  /* V.42 normatif : ODP/ADP puis LAPM */
+      /* span RRC 12 : la troncature à 8 laissait ~-35 dB d'ISI, mesurable à 1024-QAM */
+      /* boucles calmées : à 6000+ bauds les gains par symbole V.22bis (x10 en absolu)
+         injectent leur propre bruit de poursuite — mesuré : 20 dB -> 24 dB d'EVM */
+      const G=16;this.rx.gT1/=G*G;this.rx.gT2/=G;this.rx.gC1/=G;this.rx.gC2/=G*G;this.rx.gA/=G;
+      this.link=this.mkBoomLink(false);
+      this.t980=null;this.t1650=null;
+      this.u150=this.role==='caller'?new LineTone(this.fs,frx-Rs/4,0.05):null;this.had150=false;
+      /* ----- palier 2 : débit adaptatif par direction (récepteur autoritaire) ----- */
+      this.dUp=new LineTone(this.fs,frx+Rs/4,0.05);
+      this.dDn=new LineTone(this.fs,frx-Rs/4,0.05);
+      this.tx.setConst(16);this.rx.setConst(16);
+      this.rx.eqOn=true;
+      this.rx.eqW=new Float32Array(62);this.rx.eqW[30]=1;/* FFE 31 prises pour viser 1024 */
+      this.rx.eqX=new Float32Array(62);this.rx.eqI=0;this.rx.agcAvg=0;
+      this.rGood=0;this.rBadT=0;this.rCool=0;this.rWait=0;this.rWaitM=16;
+      this.rReqT=0;this.rReqTarget=16;this.rSwT=0;this.rHold=0;
+      this.fWc=0;this.fW0=0;this.fBadS=0;this.holdAge=0;
+      this.rPen=0;this.rPenT=0;this.rUpAt=-1;this.rClk=0;
+
+      this.chTx='porteuse '+fr(ftx,0)+' Hz (canal '+(ftx>frx?'haut':'bas')+' large)';
+      this.chRx='porteuse '+fr(frx,0)+' Hz (canal '+(frx>ftx?'haut':'bas')+' large)';
+      /* séparateur bord lointain, 4e ordre : coupure posée 0,25 Rs AU-DELÀ du bord opposé
+         de la bande de garde — le genou de phase sort entièrement de la bande utile ;
+         la réjection de l'écho local est finie par le filtre adapté (mesuré : 25 -> 27 dB) */
+      const edge=0.625*Rs,loTop=fcL+edge,hiBot=fcH-edge,off=0.25*Rs;
+      this.setRxBand(frx>ftx?'hp':'lp',frx>ftx?(loTop-off):(hiBot+off),[0.541,1.307]);
+      jlog(this.id,'V.BoOm — TX '+fr(ftx,0)+' Hz / RX '+fr(frx,0)+' Hz \u00b7 '+Rs+' bauds (\u03b1 = 0,25)');
+      if(this.role==='answer'){
+        this.state='A_U11';this.tx.start('usb1');this.txPh='U11';
+        jlog(this.id,'uns non brouillés en QPSK large (USB1, raie '+fr(ftx-Rs/4,0)+' Hz) — premier signal échangé');
+      }else{
+        this.state='C_UNSC';
+        jlog(this.id,'silence — qualification du préambule large distant (155+456 ms)');
+      }
+    }else if(fam22){
+      const ftx=this.role==='answer'?2400:1200,frx=this.role==='answer'?1200:2400;
+      this.tx=new PskTx(this.fs,ftx,0.25);
+      this.rx=new PskRx(this.fs,frx,b=>this.onByte(b));
+      /* pas d'égaliseur en V.22bis ici : ses boucles nerveuses (gains x16) glissent de
+         quadrant sur canaux µ-law et empoisonnent le LMS — mesuré au banc. Le FFE
+         appartient au récepteur V.BoOm aux boucles calmées. */
+      this.link=PROTOS['22'];
+      this.t980=this.role==='answer'?new LineTone(this.fs,980):null;
+      this.t1650=this.role==='caller'?new LineTone(this.fs,1650):null;
+      this.u150=this.role==='caller'?new LineTone(this.fs,frx-150,0.05):null;this.had150=false;
+      this.chTx='porteuse '+ftx+' Hz (canal '+(ftx===2400?'haut':'bas')+')';
+      this.chRx='porteuse '+frx+' Hz (canal '+(frx===2400?'haut':'bas')+')';
+      this.setRxBand(frx===2400?'hp':'lp',1800);
+      jlog(this.id,'V.22'+(this.bisCap?'bis':'')+' — TX '+ftx+' Hz / RX '+frx+' Hz · 600 bauds');
+      if(this.role==='answer'){
+        this.state='A_U11';this.tx.start('usb1');this.txPh='U11';
+        jlog(this.id,'uns non brouillés à 1200 (USB1, ton '+(ftx-150)+' Hz) — premier signal échangé');
+      }else{
+        this.state='C_UNSC';
+        jlog(this.id,'silence — qualification du préambule distant (155+456 ms)');
+      }
+    }else{
+      this.t980=null;this.t1650=null;
+      this.tx=this.role==='answer'?new FskTx(this.fs,1650,1850,300,0.25):new FskTx(this.fs,980,1180,300,0.25);
+      this.rx=this.role==='answer'?new FskRx(this.fs,980,1180,300,b=>this.onByte(b)):new FskRx(this.fs,1650,1850,300,b=>this.onByte(b));
+      this.link=PROTOS['21'];this.subT=0;
+      this.chTx=this.role==='answer'?'canal 2 (1650/1850 Hz)':'canal 1 (980/1180 Hz)';
+      this.chRx=this.role==='answer'?'canal 1 (980/1180 Hz)':'canal 2 (1650/1850 Hz)';
+      this.setRxBand(this.role==='answer'?'lp':'hp',1415);
+      jlog(this.id,'V.21 — '+(this.role==='answer'?'porteuse marque 1650 Hz émise':'attente de la marque 1650 Hz'));
+      if(this.role==='answer'){this.tx.start();this.state='F21_A';}
+      else this.state='F21_C';
+    }
+  }
+  swapToV21(){
+    /* automode : heuristique constructeur (hors Recommandation), comme les modems multistandards de l'époque */
+    this.tx.stop();
+    this.t980=null;this.t1650=null;
+    this.tx=this.role==='answer'?new FskTx(this.fs,1650,1850,300,0.25):new FskTx(this.fs,980,1180,300,0.25);
+    this.rx=this.role==='answer'?new FskRx(this.fs,980,1180,300,b=>this.onByte(b)):new FskRx(this.fs,1650,1850,300,b=>this.onByte(b));
+    this.link=PROTOS['21'];this.subT=0;this.dsT=0;
+    this.chTx=this.role==='answer'?'canal 2 (1650/1850 Hz)':'canal 1 (980/1180 Hz)';
+    this.chRx=this.role==='answer'?'canal 1 (980/1180 Hz)':'canal 2 (1650/1850 Hz)';
+    this.setRxBand(this.role==='answer'?'lp':'hp',1415);
+    if(this.role==='answer'){this.tx.start();this.state='F21_A';}
+    else{this.tx.start();this.state='F21_C2';}
+  }
+  call(){this.dial('0836123456');}
+  userHangup(){
+    if(!this.offhook)return;
+    jlog(this.id,'déconnexion demandée (bouton)');
+    this.print('— déconnecté —','dim');
+    this.hangup();
+  }
+  sendData(t){
+    if(!this.dataMode||!t)return;
+    this.print('\u00bb '+t);
+    this.userSend(t+'\r\n');
+  }
+  onByte(byt){
+    const ch=String.fromCharCode(byt);
+    if(this.dataMode){
+      if(byt===13)return;
+      if(byt===10){this.print(this.rxLine,'rem');this.rxLine='';
+        if(this.role==='answer'&&GREET&&!this.replied){
+          this.replied=true;
+          const msg='5/5. ICI '+this.id+' - LE COEUR BAT A '+this.link.bps+' BPS.';
+                }
+        return;}
+      this.rxLine+=(byt>=32&&byt<127)?ch:'\u00b7';
+      if(this.rxLine.length>60){this.print(this.rxLine,'rem');this.rxLine='';}
+    }else{
+      this.cmBuf=(this.cmBuf+ch).slice(-48);
+      let mm;
+      if(false&&this.role==='answer'&&!this.cmGot&&(mm=this.cmBuf.match(/CM:([0-9,]+);/))){
+        this.cmGot=true;
+        const list=mm[1].split(',');
+        this.negProto=bestCommon(this.maxProto,list);
+        jlog(this.id,'CM reçu — distant : V.'+list.join(', V.')+' · commun retenu : '+PROTOS[this.negProto].label);
+      }
+      if(false&&this.role==='caller'&&!this.jmGot&&(mm=this.cmBuf.match(/JM:([0-9]+);/))){
+        this.jmGot=true;
+        this.negProto=PROTOS[mm[1]]?mm[1]:'21';
+        jlog(this.id,'JM reçu — protocole retenu : '+PROTOS[this.negProto].label);
+        this.userSend('CJ;');
+      }
+    }
+  }
+  txSample(){
+    let v=0;
+    if(this.state==='DIALING')v=this.dtmf.sample();
+    else if(this.state==='TONE2100'){
+      v=this.ansam.sample();
+      if(this.wantBoom()){ /* signature V.BoOm : 5 500 Hz superposée à l'ANSam (invisible sous 3 400 Hz de bande) */
+        this.sgP+=2*Math.PI*5500/this.fs;if(this.sgP>2*Math.PI)this.sgP-=2*Math.PI;
+        v+=0.12*Math.sin(this.sgP);
+      }
+    }
+    else if(this.tx&&this.tx.on)v=this.tx.sample();
+    if(this.markT>0){ /* marque appelant V.BoOm : bitonalité 4 400 + 6 800 Hz, 200 ms */
+      this.markT--;
+      this.mkP1+=2*Math.PI*4400/this.fs;if(this.mkP1>2*Math.PI)this.mkP1-=2*Math.PI;
+      this.mkP2+=2*Math.PI*6800/this.fs;if(this.mkP2>2*Math.PI)this.mkP2-=2*Math.PI;
+      v+=0.15*Math.sin(this.mkP1)+0.15*Math.sin(this.mkP2);
+    }
+    this.txLev+=0.001*(v*v-this.txLev);
+    return v;
+  }
+  rxSample(x){
+    this.rxLev+=0.001*(x*x-this.rxLev);
+    if(this.role==='caller'&&!this.dataMode)this.ansDet.p(x);
+    if(this.role==='caller'&&!this.dataMode&&this.wantBoom())this.sigDet.p(x);
+    if(this.role==='answer'&&!this.dataMode&&this.wantBoom()){this.mk1.p(x);this.mk2.p(x);}
+    if(this.direct&&!this.offhook)this.dtmfRing.p(x);
+    if(this.t980)this.t980.p(x);if(this.t1650)this.t1650.p(x);if(this.u150)this.u150.p(x);
+    if(this.boom&&this.dataMode){this.dUp.p(x);this.dDn.p(x);}
+    if(this.rx)this.rx.p(this.rxBiq?this.rxFilt(x):x);
+  }
+  tick(){
+    if(this.state==='IDLE'&&this.redialT>0){
+      if(--this.redialT===0){
+        this.capLow=true;
+        jlog(this.id,'recomposition automatique — plafond temporaire V.22 (1200)','W');
+        this.call();
+      }
+    }
+    if(this.direct&&!this.offhook&&this.listenAuto){
+      const d=this.dtmfRing;
+      if(d.digits.length>=3&&d.silMs>=700){
+        const n=d.digits;d.reset();
+        jlog(this.id,'ligne directe — DTMF entendu \u00ab '+n+' \u00bb suivi de silence : sonnerie synthétisée');
+        this.onRing();
+      }
+    }
+    if(!this.direct&&this.offhook&&this.co.state==='idle'){
+      this.deadT++;
+      if(this.deadT>this.fs*6){
+        jlog(this.id,'ligne morte depuis 6 s — abandon','W');
+        this.print('NO CARRIER','warn');
+        this.hangup();return;
+      }
+    }else this.deadT=0;
+    if(this.escT>0&&--this.escT===0){this.dataMode=false;this.print('OK','ok');
+      jlog(this.id,'séquence d\u2019échappement +++ — retour en mode commande');
+      const q=this.pend;this.pend=[];
+      for(const l of q)this.input(l);}
+    if(this.timer>0)this.timer--;
+    switch(this.state){
+      case 'DIALTONE':
+        if(this.timer===0){this.state='DIALING';this.dtmf.dial(this.pendingNum);
+          jlog(this.id,'numérotation DTMF '+this.pendingNum);}
+        break;
+      case 'DIALING':
+        if(this.dtmf.done){this.state='RINGBACK';jlog(this.id,'numérotation terminée — attente de réponse');}
+        break;
+      case 'RINGBACK':
+        this.rbT++;
+        if(this.rbT>this.fs*22){
+          this.print('— pas de réponse —','warn');
+          jlog(this.id,'pas de réponse après 4 sonneries — abandon','W');
+          this.hangup();break;
+        }
+        if(this.ansDet.on){this.state='ANS_DET';this.timer=Math.round(this.fs*1.0);
+          jlog(this.id,'tonalité de réponse 2 100 Hz détectée — silence appelant');}
+        break;
+      case 'ANS_DET':
+        if(this.wantBoom()&&!this.markSent&&this.sigDet.held(300)){
+          this.markSent=true;this.negBoom=true;this.markT=Math.round(this.fs*0.2);
+          jlog(this.id,'signature 5 500 Hz entendue dans l\u2019ANSam — V.BoOm demandé (marque 4 400 + 6 800 Hz émise)');
+        }
+        if(this.ansDet.on){this.ansT=(this.ansT||0)+1;}
+        else if((this.ansT||0)>this.fs*1.2){
+          jlog(this.id,'fin de la tonalité de réponse ('+(this.ansT/this.fs).toFixed(1)+' s) — 75 ms puis pile locale');
+          this.state='SIL75';this.timer=Math.round(this.fs*0.075);this.ansT=0;
+        }
+        break;
+      case 'SIL75':
+        if(this.timer===0)this.setupProtoLink();
+        break;
+      case 'ANSWER_SIL':
+        if(this.timer===0){this.ansam.start();this.state='TONE2100';this.timer=Math.round(this.fs*3.3);
+          jlog(this.id,'tonalité de réponse : 2 100 Hz pur (V.25) — 3,3 s');}
+        break;
+      case 'TONE2100':
+        if(this.wantBoom()&&!this.negBoom&&this.mk1.held(120)&&this.mk2.held(120)){
+          this.negBoom=true;
+          jlog(this.id,'marque appelant 4 400 + 6 800 Hz reçue — V.BoOm accepté');
+        }
+        if(this.timer===0){this.ansam.stop();this.state='SIL75A';this.timer=Math.round(this.fs*0.075);
+          jlog(this.id,'fin de tonalité — 75 ms de silence');}
+        break;
+      case 'SIL75A':
+        if(this.timer===0)this.setupProtoLink();
+        break;
+
+      case 'F21_A':
+        this.subT++;
+        if(this.rx.dcd)this.dsT++;else this.dsT=0;
+        if(this.dsT>=Math.round(this.fs*0.155)&&this.subT>this.fs*0.456)this.connectNow();
+        else if(this.subT>this.fs*20){jlog(this.id,'pas d\u2019appelant V.21 — abandon','W');this.hangup();}
+        break;
+      case 'F21_C':
+        this.subT++;
+        if(this.rx.dcd)this.dsT++;else this.dsT=0;
+        if(this.dsT>=Math.round(this.fs*0.155)){this.tx.start();this.state='F21_C2';this.subT=0;
+          jlog(this.id,'marque 1650 Hz reçue — émission de la marque 980 Hz');}
+        else if(this.subT>this.fs*8){jlog(this.id,'pas de marque V.21 — abandon','W');this.hangup();}
+        break;
+      case 'F21_C2':
+        this.subT++;
+        if(this.subT>this.fs*0.456)this.connectNow();
+        break;
+
+      case 'C_UNSC':{
+        this.subT++;this.trT++;
+        if(this.rx.dcd&&this.rx.sigOK)this.dsT++;else this.dsT=0;
+        if(this.t1650&&this.t1650.held(this.fs,300)){
+          jlog(this.id,'raie 1650 Hz pure — automode (constructeur) : répondeur V.21','W');
+          this.swapToV21();break;
+        }
+        if(this.subT>=Math.round(this.fs*0.611)){
+          if(this.dsT>=Math.round(this.fs*0.456)){
+            if(this.bisCap){
+              jlog(this.id,'préambule stable 456 ms — S1 émis (100 ms) : demande de '+this.hiName());
+              this.tx.start('s1');this.txPh='S1';this.txT=0;this.rtRole='';
+            }else{
+              jlog(this.id,'préambule stable 456 ms — uns brouillés émis (V.22, 1200)');
+              this.tx.start('sb1');this.txPh='SB';this.txT=0;
+            }
+            this.state='C_SUST';this.subT=0;
+          }else this.subT=Math.round(this.fs*0.4);
+        }
+        if(this.trT>this.fs*8){jlog(this.id,'pas de préambule '+(this.boom?'V.BoOm':'V.22')+' — abandon','W');if(this.boom)this.boomFail++;this.armRedial();this.hangup();}
+        break;}
+      case 'C_SUST':{
+        this.subT++;this.trT++;this.txStep();
+        if(this.u150&&this.u150.held(this.fs,100))this.had150=true;
+        const uGone=this.had150&&this.u150&&this.u150.cnt<this.fs*0.03;
+        const changed=this.rx.s1Seen||(uGone&&this.subT>this.fs*0.05)
+          ||this.subT>=Math.round(this.fs*0.35);
+        if(changed){
+          this.state='C_SCR';this.subT=0;
+          this.txPh='SB756';this.txT=0;this.tx.setMode('sb1');
+          if(this.rx.s1Seen){this.negRate=2400;this.rx.s1Seen=false;this.rx.s1Cnt=0;
+            jlog(this.id,'S1 du répondeur détecté — liaison '+this.hiName()+' confirmée');}
+        }
+        if(this.trT>this.fs*8){jlog(this.id,'entraînement interrompu — abandon','W');if(this.boom)this.boomFail++;this.hangup();}
+        break;}
+      case 'C_SCR':{
+        this.subT++;this.trT++;this.txStep();
+        if(this.negRate===1200){
+          if(this.rx.s1Seen){this.negRate=2400;this.rx.s1Seen=false;this.rx.s1Cnt=0;
+            jlog(this.id,'S1 du répondeur détecté — liaison '+this.hiName()+' confirmée');}
+          else if(this.subT>=Math.round(this.fs*0.270)){
+            jlog(this.id,'270 ms sans S1 — engagement définitif à '+this.loName());
+            this.rx.gate=true;this.txPh='SB756';this.txT=0;
+            this.state='FIN12';this.fdT=0;
+          }
+        }else if(this.subT>=Math.round(this.fs*0.550)){
+          this.rx.qam=true;this.rx.qLoss=14;this.rx.lastQa=-1;this.rx.ones4=0;this.rx.ones32=false;
+          jlog(this.id,'décisions 16 voies engagées — attente des 32 uns');
+          this.state='W2400';this.subT=0;
+        }
+        if(this.trT>this.fs*8){jlog(this.id,'entraînement interrompu — abandon','W');this.hangup();}
+        break;}
+
+      case 'A_U11':{
+        this.subT++;this.trT++;
+        if(this.rx.dcd&&this.rx.sigOK)this.dsT++;else this.dsT=0;
+        if(this.t980&&this.t980.held(this.fs,250)){
+          jlog(this.id,'raie 980 Hz pure — automode (constructeur) : appelant V.21','W');
+          this.swapToV21();break;
+        }
+        if(this.rx.s1Seen&&this.bisCap){
+          this.negRate=2400;this.rx.s1Seen=false;this.rx.s1Cnt=0;
+          jlog(this.id,'S1 reçu — S1 renvoyé (100 ms) : liaison '+this.hiName()+' acceptée');
+          this.tx.setMode('s1');this.txPh='S1';this.txT=0;this.rtRole='';
+          this.state='A_SCR';this.subT=0;
+        }else if((this.rx.s1Seen&&!this.bisCap)||
+                 (this.dsT>=Math.round(this.fs*0.270)&&!(this.t980&&this.t980.held(this.fs,120)))){
+          if(this.rx.s1Seen)jlog(this.id,'S1 reçu mais plafond 1200 — traité comme simple préambule');
+          jlog(this.id,'porteuse appelante 270 ms sans S1 accepté — V.22 : uns brouillés minutés');
+          this.rx.s1Seen=false;
+          this.tx.setMode('sb1');this.txPh='SB756';this.txT=0;
+          this.state='A_SCR12';this.subT=0;
+        }else if(this.trT>this.fs*6&&this.dsT===0){
+          jlog(this.id,'aucune porteuse V.22 en 6 s — cycle de repli automode : marque V.21','W');
+          this.swapToV21();break;
+        }
+        if(this.trT>this.fs*25){jlog(this.id,'pas d\u2019appelant — abandon','W');if(this.boom)this.boomFail++;this.hangup();}
+        break;}
+      case 'A_SCR':{
+        this.subT++;this.trT++;this.txStep();
+        if(this.subT>=Math.round(this.fs*0.450)&&!this.rx.qam){
+          this.rx.qam=true;this.rx.qLoss=14;this.rx.lastQa=-1;this.rx.ones4=0;this.rx.ones32=false;
+          jlog(this.id,'décisions 16 voies engagées — attente des 32 uns');
+          this.state='W2400';this.subT=0;
+        }
+        if(this.trT>this.fs*8){jlog(this.id,'entraînement interrompu — abandon','W');this.hangup();}
+        break;}
+      case 'A_SCR12':{
+        this.subT++;this.trT++;this.txStep();
+        if(this.subT>=Math.round(this.fs*(0.270+0.765))){
+          this.rx.gate=true;this.state='FIN12';this.fdT=0;
+        }
+        break;}
+      case 'FIN12':{
+        this.txStep();
+        if(this.txPh==='DONE1200'){
+          this.fdT++;
+          if(this.fdT>this.fs*0.15){this.link=this.boom?this.mkBoomLink(false):PROTOS['22'];this.connectNow();}
+        }
+        break;}
+      case 'W2400':{
+        this.subT++;this.trT++;this.txStep();
+        if(this.rx.ones32){
+          this.rx.gate=true;
+          jlog(this.id,'32 uns consécutifs reçus à '+this.hiName()+' — intégrité confirmée');
+          this.state='FIN24';this.fdT=0;
+        }else if(this.subT>this.fs*2.5){
+          jlog(this.id,'pas de 32 uns à '+this.hiName()+' — entraînement échoué','W');
+          if(this.boom)this.boomFail++;
+          this.armRedial();this.hangup();
+        }
+        break;}
+      case 'FIN24':{
+        this.txStep();
+        if(this.txPh==='DONE2400'){
+          this.fdT++;
+          if(this.fdT>this.fs*0.10){
+            this.link=this.boom?this.mkBoomLink(true):PROTOS['2B'];this.rx.s1Seen=false;this.rx.s1Cnt=0;this.connectNow();
+          }
+        }
+        break;}
+      case 'R_SCR':{
+        this.subT++;this.trT++;this.txStep();
+        if(this.rtRole==='req'&&this.txPh==='SB'&&this.rx.s1Seen){
+          this.rx.s1Seen=false;this.txT=0;this.txPh='SB500';
+          jlog(this.id,'S1 du distant reçu — poursuite du ré-entraînement');
+        }else if(this.rtRole==='req'&&this.txPh==='SB'&&this.txT>=Math.round(this.fs*0.25)){
+          this.txT=0;this.txPh='SB500';
+          jlog(this.id,'écho S1 inaudible (ligne bruitée) — poursuite minutée du ré-entraînement');
+        }
+        const g=this.rtRole==='rsp'?0.450:0.550;
+        if(this.subT>=Math.round(this.fs*g)&&!this.rx.qam){
+          this.rx.qam=true;this.rx.qLoss=14;this.rx.lastQa=-1;this.rx.ones4=0;this.rx.ones32=false;
+          this.state='W2400';this.subT=0;
+        }
+        if(this.trT>this.fs*4){jlog(this.id,'retrain sans réponse — NO CARRIER','W');this.armRedial();this.carrierLost();}
+        break;}
+      case 'DATA':{
+        if(this.greetT>0&&--this.greetT===0){this.print('\u00bb '+this.greetMsg.replace(/\r\n$/,''));this.userSend(this.greetMsg);this.greetMsg='';}
+        if(this.boom)this.rateTick();
+        const q=this.rx.snrDb?this.rx.snrDb():99;
+        const qbad=this.rx.dcd&&q<(this.rx.qLoss||5);
+        if((this.link.code==='2B'||this.link.code==='BM')&&this.rx.s1Seen){this.joinRetrain();break;}
+        if((this.link.code==='2B'||this.link.code==='BM')&&qbad&&!this.rGrace){
+          this.rtT=(this.rtT||0)+1;
+          if(this.rtT>this.fs*0.8){
+            if(this.rtN>=3){jlog(this.id,'3 retrains sans amélioration — abandon (politique constructeur)','W');this.armRedial();this.carrierLost();break;}
+            this.startRetrain('qualité insuffisante à 2400 (SNR démod '+q.toFixed(1)+' dB)');break;}
+        }else{
+          this.rtT=0;
+          if(q>18){this.okT=(this.okT||0)+1;
+            if(this.okT>this.fs*10){this.okT=0;if(this.rtN>0)this.rtN--;}}
+          else this.okT=0;
+        }
+        const lost=!this.rx.dcd||(qbad&&this.link.code!=='2B');
+        if(lost){
+          this.lossT++;
+          if(this.lossT===Math.round(this.fs*0.2))
+            jlog(this.id,(!this.rx.dcd?'porteuse distante disparue'
+              :'signal noyé dans le bruit (SNR démod '+q.toFixed(1)+' dB)')+' — temporisation S10 (1,4 s)');
+          if(this.lossT>this.fs*1.4)this.carrierLost();
+        }else this.lossT=Math.max(0,this.lossT-4);
+        break;}
+    }
+  }
+  phaseIdx(){
+    switch(this.state){
+      case 'IDLE':return 0;
+      case 'DIALTONE':case 'DIALING':return 1;
+      case 'RINGBACK':case 'RINGING':return 2;
+      case 'ANS_DET':case 'ANSWER_SIL':case 'TONE2100':case 'SIL75':case 'SIL75A':return 3;
+      case 'C_UNSC':case 'C_SUST':case 'C_SCR':case 'A_U11':case 'A_SCR':case 'A_SCR12':case 'FIN12':case 'W2400':case 'FIN24':case 'R_SCR':case 'F21_A':case 'F21_C':case 'F21_C2':return 5;
+      case 'DATA':return 6;
+    }
+    return 0;
+  }
+  pillTxt(){
+    switch(this.state){
+      case 'IDLE':return ['à l\u2019écoute',''];
+      case 'DIALTONE':return ['tonalité','a'];
+      case 'DIALING':return ['numérotation','a'];
+      case 'RINGBACK':return ['sonnerie (appel)','a'];
+      case 'RINGING':return ['sonnerie entrante','a'];
+      case 'ANS_DET':case 'TONE2100':case 'ANSWER_SIL':case 'SIL75':case 'SIL75A':return ['2100 Hz','a'];
+      case 'C_UNSC':case 'C_SUST':case 'C_SCR':case 'A_U11':case 'A_SCR':case 'A_SCR12':case 'FIN12':case 'W2400':case 'FIN24':case 'R_SCR':case 'F21_A':case 'F21_C':case 'F21_C2':return ['entraînement','a'];
+      case 'DATA':{
+        if(this.boom&&this.tx.C.M!==this.rx.M)
+          return ['Connect RX '+(this.rx.C.b*this.boomRs)+' / TX '+(this.tx.C.b*this.boomRs),'g'];
+        return ['Connect '+this.link.bps,'g'];}
+    }
+    return ['à l\u2019écoute',''];
+  }
+}
+
+/* ================= moteur + audio ================= */
+let AUTO=false, GREET=true, monMode=2, monSrc='auto', volume=40, CARRIER=false, speed=1, running=false;
+const pendingMax={A:'BM',B:'BM'};
+let ctx=null, gainNode=null, sent=0, engine=null;
+const audio={ok:false,mode:'aucun',underruns:0,lastQ:0,push(){},clear(){}};
+
+const WORKLET_SRC=
+"class Mon extends AudioWorkletProcessor{constructor(){super();this.q=[];this.qn=0;this.o=0;this.u=0;this.c=0;"+
+"this.port.onmessage=e=>{const d=e.data;if(d.cmd==='push'){this.q.push(d.buf);this.qn+=d.buf.length;}"+
+"else if(d.cmd==='clear'){this.q=[];this.qn=0;this.o=0;}};}"+
+"process(inp,out){const ch=out[0][0];let i=0;"+
+"while(i<ch.length){if(this.q.length===0){for(;i<ch.length;i++)ch[i]=0;this.u++;break;}"+
+"const b=this.q[0];const n=Math.min(ch.length-i,b.length-this.o);"+
+"ch.set(b.subarray(this.o,this.o+n),i);i+=n;this.o+=n;this.qn-=n;"+
+"if(this.o>=b.length){this.q.shift();this.o=0;}}"+
+"if(out[0].length>1)out[0][1].set(ch);"+
+"if(++this.c>=8){this.c=0;this.port.postMessage({q:this.qn,u:this.u});}return true;}}"+
+"registerProcessor('mon',Mon);";
+
+class Eye{
+  constructor(n){this.ph=new Float32Array(n);this.v=new Float32Array(n);this.i=0;this.full=false;this.N=n;}
+  push(p,val){this.ph[this.i]=p;this.v[this.i]=val;this.i=(this.i+1)%this.N;if(this.i===0)this.full=true;}
+  clear(){this.i=0;this.full=false;}
+}
+
+class Engine{
+  constructor(fs){
+    this.fs=fs;this.samples=0;
+    this.line=new Line(fs);this.line.setProfile(currentProfile);
+    this.co=new CentralOffice(fs);
+    this.A=new Modem('A',fs,this.co,this.line);
+    this.B=new Modem('B',fs,this.co,this.line);
+    this.co.a=this.A;this.co.b=this.B;
+    this.A.maxProto=pendingMax.A;this.B.maxProto=pendingMax.B;
+    this.ringMon=new Ring(8192);this.ringA=new Ring(8192);this.ringB=new Ring(8192);
+    this.eyeA=new Eye(1400);this.eyeB=new Eye(1400);
+    this.blk=0;
+  }
+  t(){return this.samples/this.fs;}
+  gen(n){
+    const out=new Float32Array(n);
+    const L=this.line,co=this.co,A=this.A,B=this.B;
+    for(let i=0;i<n;i++){
+      co.tickSample();
+      const aV=!A.port, bV=!B.port;
+      const aT=aV?A.txSample():0, bT=bV?B.txSample():0;
+      let busAB=0,busBA=0;
+      if(co.state==='connected'){busAB=aT;busBA=bT;}
+      else if(co.caller){
+        const tone=co.toneToCaller();
+        if(co.caller===A)busBA=tone;else busAB=tone;
+      }
+      if(co.state==='dialtone'||co.state==='collect'){
+        co.det.p(co.caller===A?aT:bT);
+        if(++this.blk>=960){this.blk=0;co.tickBlock();}
+      }
+      let toB=L.ab.p(busAB), toA=L.ba.p(busBA);
+      if(L.pickupOn){const na=L.pickupAmp;toB+=na*gauss();toA+=na*gauss();}
+      const aRx=(aV&&A.offhook)?toA+L.echoA(aT):0;
+      const bRx=(bV&&B.offhook)?toB+L.echoB(bT):0;
+      if(aV){A.rxSample(aRx);A.tick();}
+      if(bV){B.rxSample(bRx);B.tick();}
+      /* prises moniteur : les modems sur carte son sont ramenés à l'horloge
+         du moniteur par rééchantillonnage linéaire (RingReader) */
+      const txA=A.port?A.port.rdTx.read():aT;
+      const txB=B.port?B.port.rdTx.read():bT;
+      let mon;
+      if(monSrc==='A')mon=clamp(txA,-1,1);
+      else if(monSrc==='B')mon=clamp(txB,-1,1);
+      else if(monSrc==='inA')mon=clamp(A.port?A.port.rdIn.read():aRx,-1,1);
+      else if(monSrc==='inB')mon=clamp(B.port?B.port.rdIn.read():bRx,-1,1);
+      else if(monSrc==='mix')mon=clamp(0.7*(txA+txB),-1,1);
+      else{                                        /* auto : vue intelligente */
+        const P=A.port||B.port;
+        if(P)mon=clamp(P.rdIn.read(),-1,1);        /* carte son : la ligne réelle telle qu'entendue */
+        else{                                      /* ligne virtuelle : combiné de l'appelant */
+          let tapA=!co.caller||co.caller===A;
+          if(A.offhook!==B.offhook)tapA=A.offhook;
+          mon=tapA?clamp(aT*0.9+toA,-1,1):clamp(bT*0.9+toB,-1,1);
+        }
+      }
+      this.ringMon.push(mon);this.ringA.push(aRx);this.ringB.push(bRx);
+      if((this.samples&3)===0){
+        if(A.rx&&A.rx.dcd)this.eyeA.push(A.rx.eyePh,A.rx.soft);
+        if(B.rx&&B.rx.dcd)this.eyeB.push(B.rx.eyePh,B.rx.soft);
+      }
+      out[i]=mon;
+      this.samples++;
+    }
+    return out;
+  }
+}
+
+let currentProfile='perfect';
+
+function gainTarget(){
+  if(typeof MON_COLLIDE!=='undefined'&&MON_COLLIDE)return 0; /* boucle carte par défaut : audio muet, instruments actifs */
+  const gate=monMode===2?1:(monMode===1?(CARRIER?0:1):0);
+  return (speed===1?volume/100:0)*gate;
+}
+function updateGain(){
+  if(gainNode&&ctx)gainNode.gain.setTargetAtTime(gainTarget(),ctx.currentTime,0.02);
+}
+function setMonMode(m){
+  monMode=m;updateGain();
+  document.querySelectorAll('#mChips .chip').forEach(c=>c.classList.toggle('on',+c.dataset.m===m));
+  $('#mNote').textContent=m===0?'M0 : haut-parleur toujours coupé':
+    m===1?'M1 : haut-parleur actif jusqu\u2019à l\u2019établissement de la porteuse':
+    'M2 : haut-parleur toujours actif';
+}
+function setVolume(v){
+  volume=clamp(Math.round(v),0,100);
+  $('#volRange').value=volume;$('#volPct').textContent=volume>0?volume+' %':'muet';
+  updateGain();
+}
+function onCarrierUp(){
+  if(!CARRIER){CARRIER=true;updateGain();
+    $('#pillJ').textContent='porteuse établie';$('#pillJ').className='pill g';
+    if(monMode===1)jlog('—','haut-parleur coupé (mode M1)');}
+}
+function onCarrierDown(){
+  if(CARRIER){CARRIER=false;updateGain();
+    $('#pillJ').textContent='ligne libérée';$('#pillJ').className='pill';}
+}
+
+async function startAudio(fsWanted){
+  try{
+    ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:fsWanted});
+  }catch(e){
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+  }
+  await ctx.resume();
+  gainNode=ctx.createGain();gainNode.gain.value=gainTarget();
+  gainNode.connect(ctx.destination);
+  try{
+    const url=URL.createObjectURL(new Blob([WORKLET_SRC],{type:'application/javascript'}));
+    await ctx.audioWorklet.addModule(url);
+    const node=new AudioWorkletNode(ctx,'mon',{numberOfOutputs:1,outputChannelCount:[2]});
+    node.port.onmessage=e=>{audio.lastQ=e.data.q;audio.underruns=e.data.u;};
+    node.connect(gainNode);
+    audio.push=buf=>node.port.postMessage({cmd:'push',buf},[buf.buffer]);
+    audio.clear=()=>node.port.postMessage({cmd:'clear'});
+    audio.mode='AudioWorklet';
+  }catch(e){
+    const fifo=[];let off=0,qn=0;
+    const spn=ctx.createScriptProcessor(2048,0,1);
+    spn.onaudioprocess=ev=>{
+      const ch=ev.outputBuffer.getChannelData(0);let i=0;
+      while(i<ch.length){
+        if(fifo.length===0){for(;i<ch.length;i++)ch[i]=0;audio.underruns++;break;}
+        const b=fifo[0];const n=Math.min(ch.length-i,b.length-off);
+        ch.set(b.subarray(off,off+n),i);i+=n;off+=n;qn-=n;
+        if(off>=b.length){fifo.shift();off=0;}
+      }
+      audio.lastQ=qn;
+    };
+    spn.connect(gainNode);
+    audio.push=buf=>{fifo.push(buf);qn+=buf.length;};
+    audio.clear=()=>{fifo.length=0;off=0;qn=0;};
+    audio.mode='ScriptProcessor';
+  }
+  audio.ok=true;
+  return ctx.sampleRate;
+}
+
+/* cadenceur : rythme la génération sur l'horloge audio (×1) ou sur l'horloge machine (turbo) */
+let cpuAcc=0,cpuT0=now(),cpuPct=0;
+setInterval(()=>{
+  if(!running||!engine)return;
+  const t0=now();
+  if(speed===1&&audio.ok){
+    const target=Math.floor((ctx.currentTime+0.15)*engine.fs);
+    let n=clamp(target-sent,0,4800);
+    if(n>0){const c=engine.gen(n);audio.push(c);sent+=n;}
+  }else{
+    const n=Math.min(Math.round(engine.fs*0.015*speed),Math.round(engine.fs*0.5));
+    engine.gen(n);
+  }
+  cpuAcc+=now()-t0;
+  const el=now()-cpuT0;
+  if(el>=500){cpuPct=100*cpuAcc/el;cpuAcc=0;cpuT0=now();}
+},15);
+
+/* ================= interface ================= */
+const PHASES=['écoute','appel','sonnerie','ANSam','V.8','porteuse','données'];
+const UIs={};
+
+function jlog(tag,msg,cls){
+  const j=$('#journal');if(!j)return;
+  const t=engine?engine.t():0;
+  const d=document.createElement('div');
+  const ts=document.createElement('span');
+  ts.className='dim';
+  ts.textContent=t.toFixed(2).padStart(6,'0').replace('.',',')+'  ';
+  const tg=document.createElement('span');
+  tg.className=tag==='A'?'jA':(tag==='B'?'jB':'');
+  tg.textContent=tag+'  ';
+  const ms=document.createElement('span');
+  if(cls==='W')ms.className='jW';
+  ms.textContent=msg;
+  d.appendChild(ts);d.appendChild(tg);d.appendChild(ms);
+  j.appendChild(d);
+  while(j.childNodes.length>400)j.removeChild(j.firstChild);
+  j.scrollTop=j.scrollHeight;
+}
+
+function buildPanel(sel,id,label){
+  const el=$(sel);
+  el.innerHTML=
+  '<div class="phead"><h2>Modem '+id+' — '+label+'</h2><span class="pill" id="pill'+id+'">repos</span></div>'+
+  '<div class="steps" id="steps'+id+'"><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>'+
+  '<div class="phase" id="phase'+id+'">Phase : écoute (1/7)</div>'+
+  '<div class="chips pr" id="pr'+id+'">'+
+    '<span class="swl">Protocole max</span>'+
+    '<button class="chip" data-v="21">V.21 · 300</button>'+
+    '<button class="chip" data-v="22">V.22 · 1200</button>'+
+    '<button class="chip" data-v="2B">V.22bis · 2400</button>'+
+    '<button class="chip on" data-v="BM">V.BoOm · large</button>'+
+  '</div>'+
+  '<div class="ctlrow"><button class="sw on" id="sw'+id+'" title="Écoute auto"><i></i></button><span class="swl">Écoute auto</span></div>'+
+  '<div class="ctlrow" style="align-items:center;gap:8px;margin-top:6px"><span class="swl" style="white-space:nowrap">Connecteur</span>'+
+    '<select class="portsel" id="port'+id+'"><option value="virtual">Ligne virtuelle interne</option>'+
+    '<option value="__scan">\u21bb Détecter les cartes de son\u2026</option></select></div>'+
+  '<div class="note" id="pstat'+id+'" style="margin:2px 0 6px">ligne virtuelle interne — central téléphonique simulé</div>'+
+  '<div class="ctlrow" id="pgrow'+id+'" style="display:none;align-items:center;gap:8px">'+
+    '<span class="swl" style="white-space:nowrap">Gain d\u2019entrée</span>'+
+    '<input type="range" id="pg'+id+'" min="0" max="100" value="20" style="flex:1;accent-color:#1D9E75">'+
+    '<span class="swl" id="pgl'+id+'" style="min-width:52px;text-align:right">+0 dB</span></div>'+
+  '<button class="btnbig go" id="cx'+id+'">Connecter</button>'+
+  '<div class="rowC">'+
+    '<div class="ovl"><canvas id="cvC'+id+'" class="scope cvC"></canvas>'+
+    '<div class="mid" id="cn'+id+'">constellation en veille — FSK V.21 (s\u2019allume en V.22)</div></div>'+
+    '<div class="cards">'+
+      '<div class="card"><i>SNR démod.</i><b id="sSnr'+id+'">—</b></div>'+
+      '<div class="card"><i>Δf porteuse (mes.)</i><b id="sDf'+id+'">—</b></div>'+
+      '<div class="card"><i>Niveau RX</i><b id="sRx'+id+'">—</b></div>'+
+      '<div class="card"><i>Erreurs trame</i><b id="sFe'+id+'">0</b></div>'+
+    '</div>'+
+  '</div>'+
+  '<canvas id="cvS'+id+'" class="scope mt8 cvS"></canvas>'+
+  '<div class="row2 mt8" style="grid-template-columns:1fr 1fr">'+
+    '<canvas id="cvE'+id+'" class="scope cvE"></canvas>'+
+    '<canvas id="cvQ'+id+'" class="scope cvE"></canvas>'+
+  '</div>'+
+  '<div class="info">'+
+    '<span id="i1'+id+'">Débit —</span><span id="i2'+id+'">RX —</span>'+
+    '<span id="i3'+id+'">TX —</span><span id="i4'+id+'">porteuse absente</span>'+
+    '<span id="i5'+id+'">Octets TX 0 · RX 0</span><span id="i6'+id+'">mode commande</span>'+
+  '</div>'+
+  '<div class="term" id="term'+id+'"></div>'+
+  '<input class="termin" id="in'+id+'" placeholder="connectez d\u2019abord — saisie désactivée" autocomplete="off" spellcheck="false" disabled>';
+  const ui={
+    pill:$('#pill'+id),steps:Array.from(el.querySelectorAll('#steps'+id+' b')),
+    phase:$('#phase'+id),cvC:$('#cvC'+id),
+    sSnr:$('#sSnr'+id),sDf:$('#sDf'+id),sRx:$('#sRx'+id),sFe:$('#sFe'+id),
+    cvS:$('#cvS'+id),cvE:$('#cvE'+id),cvQ:$('#cvQ'+id),
+    i1:$('#i1'+id),i2:$('#i2'+id),i3:$('#i3'+id),
+    i4:$('#i4'+id),i5:$('#i5'+id),i6:$('#i6'+id),
+    term:$('#term'+id),input:$('#in'+id),
+    sw:$('#sw'+id),cx:$('#cx'+id),
+    cn:$('#cn'+id),
+    portSel:$('#port'+id),pstat:$('#pstat'+id),pgRow:$('#pgrow'+id),pg:$('#pg'+id),pgl:$('#pgl'+id),
+    prChips:Array.from(el.querySelectorAll('#pr'+id+' .chip[data-v]')),
+    print(txt,cls){
+      const d=document.createElement('div');
+      if(cls)d.className=cls;
+      d.textContent=txt;
+      this.term.appendChild(d);
+      while(this.term.childNodes.length>150)this.term.removeChild(this.term.firstChild);
+      this.term.scrollTop=this.term.scrollHeight;
+    }
+  };
+  UIs[id]=ui;
+  ui.prChips.forEach(c=>{
+    c.addEventListener('click',()=>{
+      const m=engine?(id==='A'?engine.A:engine.B):null;
+      if(m&&m.offhook)return;
+      ui.prChips.forEach(x=>x.classList.toggle('on',x===c));
+      pendingMax[id]=c.dataset.v;
+      if(m){m.maxProto=c.dataset.v;
+        jlog(m.id,'plafond protocole : '+PROTOS[m.maxProto].label+' ('+PROTOS[m.maxProto].bps+' bit/s)');}
+    });
+  });
+  ui.cx.addEventListener('click',()=>{
+    const m=engine?(id==='A'?engine.A:engine.B):null;
+    if(!m){ui.print('— démarrer le banc d\u2019abord —','dim');return;}
+    if(ui.cx.disabled)return;
+    if(m.state==='RINGING'){m.answer();return;}
+    if(m.offhook){m.userHangup();return;}
+    m.call();
+  });
+  ui.sw.addEventListener('click',()=>{
+    ui.sw.classList.toggle('on');
+    const on=ui.sw.classList.contains('on');
+    const m=engine?(id==='A'?engine.A:engine.B):null;
+    if(m){
+      m.listenAuto=on;
+      jlog(m.id,'écoute auto '+(on?'activée':'coupée'));
+      if(on&&m.state==='RINGING')m.answer();
+    }
+  });
+  ui.input.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    const v=ui.input.value.trim();ui.input.value='';
+    if(!v)return;
+    const m=engine?(id==='A'?engine.A:engine.B):null;
+    if(m&&m.dataMode)m.sendData(v);
+  });
+  ui.portSel.addEventListener('change',()=>{onPortSelect(id);});
+  ui.pg.addEventListener('input',()=>{
+    const g=pgMap(+ui.pg.value),db=20*Math.log10(g);
+    ui.pgl.textContent=(db>=0?'+':'\u2212')+Math.abs(db).toFixed(0)+' dB';
+    if(PORTS[id])PORTS[id].inGain=g;
+  });
+}
+
+/* ---- connecteurs audio (cartes de son) ---- */
+const PORTS={A:null,B:null};
+let DEVCARDS=[],DEFAULT_OUT_LABEL='';
+
+/* worklet duplex : capture l'entrée par blocs de 512 vers le fil principal,
+   rejoue la FIFO de sortie ; la pompe DSP tourne dans onmessage (fil principal) */
+const DUPLEX_SRC=
+"class Duplex extends AudioWorkletProcessor{constructor(){super();this.q=[];this.qn=0;this.o=0;this.u=0;this.acc=[];this.an=0;"+
+"this.port.onmessage=e=>{const d=e.data;if(d.cmd==='out'){this.q.push(d.buf);this.qn+=d.buf.length;}"+
+"else if(d.cmd==='clear'){this.q=[];this.qn=0;this.o=0;}};}"+
+"process(inp,out){const oc=out[0][0];const ic=(inp[0]&&inp[0][0])?inp[0][0]:null;"+
+"const cap=new Float32Array(oc.length);if(ic)cap.set(ic);this.acc.push(cap);this.an+=cap.length;"+
+"if(this.an>=512){const b=new Float32Array(this.an);let p=0;for(const a of this.acc){b.set(a,p);p+=a.length;}"+
+"this.acc=[];this.an=0;this.port.postMessage({cmd:'in',buf:b,q:this.qn,u:this.u},[b.buffer]);}"+
+"let i=0;while(i<oc.length){if(this.q.length===0){for(;i<oc.length;i++)oc[i]=0;this.u++;break;}"+
+"const b=this.q[0];const n=Math.min(oc.length-i,b.length-this.o);"+
+"oc.set(b.subarray(this.o,this.o+n),i);i+=n;this.o+=n;this.qn-=n;"+
+"if(this.o>=b.length){this.q.shift();this.o=0;}}"+
+"if(out[0].length>1)out[0][1].set(oc);return true;}}"+
+"registerProcessor('duplex',Duplex);";
+
+function normName(s){
+  return (s||'').toLowerCase()
+    .replace(/\b(microphone|micro|speakers?|haut-parleurs?|casque|headphones?|input|output|entr\u00e9e|sortie|par d\u00e9faut|default|communications?)\b/g,'')
+    .replace(/[()\[\]\-\u2013\u20140-9:.]/g,'').replace(/\s+/g,' ').trim();
+}
+function pgMap(v){return Math.pow(10,(v*0.3-6)/20);} /* curseur 0..100 -> gain -6..+24 dB */
+
+class SoundPort{
+  constructor(id,card){
+    this.id=id;this.card=card;this.ctx=null;this.node=null;this.stream=null;
+    this.ringTx=new Ring(16384);this.ringIn=new Ring(16384);this.rdTx=null;this.rdIn=null;
+    this.inGain=1;this.q=0;this.u=0;this.fs=0;this.warn='';this.mode='';
+  }
+  async start(){
+    this.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    if(this.card.outId){
+      if(typeof this.ctx.setSinkId==='function'){
+        try{await this.ctx.setSinkId(this.card.outId);}catch(e){this.warn='sortie refusée → défaut';}
+      }else this.warn='setSinkId non supporté → sortie par défaut';
+    }
+    this.stream=await navigator.mediaDevices.getUserMedia({audio:{
+      deviceId:this.card.inId?{exact:this.card.inId}:undefined,
+      echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+    await this.ctx.resume();
+    this.fs=this.ctx.sampleRate;
+    this.rdTx=new RingReader(this.ringTx,this.fs/engine.fs);
+    this.rdIn=new RingReader(this.ringIn,this.fs/engine.fs);
+    const src=this.ctx.createMediaStreamSource(this.stream);
+    let wk=false;
+    try{
+      /* blob: refusé sur origine file:// (Chromium) — on tente aussi data: avant le repli */
+      try{
+        const url=URL.createObjectURL(new Blob([DUPLEX_SRC],{type:'application/javascript'}));
+        await this.ctx.audioWorklet.addModule(url);
+      }catch(e1){
+        await this.ctx.audioWorklet.addModule('data:application/javascript;charset=utf-8,'+encodeURIComponent(DUPLEX_SRC));
+      }
+      this.node=new AudioWorkletNode(this.ctx,'duplex',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
+      src.connect(this.node);
+      this.node.connect(this.ctx.destination);
+      this.node.port.postMessage({cmd:'out',buf:new Float32Array(1024)});/* amorce ~21 ms anti-gigue */
+      this.node.port.onmessage=e=>{
+        const d=e.data;if(d.cmd!=='in')return;
+        this.q=d.q;this.u=d.u;
+        const out=new Float32Array(d.buf.length);
+        this.proc(d.buf,out);
+        this.node.port.postMessage({cmd:'out',buf:out},[out.buffer]);
+      };
+      this.mode='AudioWorklet';wk=true;
+    }catch(e){/* repli ci-dessous */}
+    if(!wk){
+      /* même technique éprouvée que le moniteur : ScriptProcessor, duplex
+         directement dans le rappel (fil principal), sans FIFO ni amorce */
+      const N=1024;
+      const spn=this.ctx.createScriptProcessor(N,1,1);
+      spn.onaudioprocess=ev=>{
+        this.q=N;
+        this.proc(ev.inputBuffer.getChannelData(0),ev.outputBuffer.getChannelData(0));
+      };
+      src.connect(spn);spn.connect(this.ctx.destination);
+      this.node=spn;this.mode='ScriptProcessor';
+      this.warn=(this.warn?this.warn+' \u00b7 ':'')+'AudioWorklet indisponible (page en file:// ?) — repli ScriptProcessor';
+    }
+  }
+  /* pas de DSP : 1 échantillon capturé = 1 pas de modem = 1 échantillon émis */
+  proc(inBuf,out){
+    const m=engine?engine[this.id]:null;
+    if(m&&running){
+      const g=this.inGain;
+      for(let i=0;i<inBuf.length;i++){
+        const t=clamp(m.txSample(),-1,1);
+        out[i]=t;this.ringTx.push(t);
+        const x=clamp(inBuf[i]*g,-1.5,1.5);
+        this.ringIn.push(x);
+        m.rxSample(x);m.tick();
+      }
+    }else{
+      for(let i=0;i<out.length;i++)out[i]=0;
+    }
+  }
+  stop(){
+    try{if(this.stream)this.stream.getTracks().forEach(t=>t.stop());}catch(e){}
+    try{if(this.ctx)this.ctx.close();}catch(e){}
+  }
+}
+
+/* (re)construit le modem à la bonne fréquence d'échantillonnage : celle de sa
+   carte son (ligne directe) ou celle du moteur (ligne virtuelle) */
+function rebindModem(id){
+  const p=PORTS[id];
+  const fs=p?p.fs:engine.fs;
+  const m=new Modem(id,fs,engine.co,engine.line);
+  m.maxProto=pendingMax[id];m.ui=UIs[id];
+  m.direct=!!p;m.port=p;
+  m.listenAuto=UIs[id].sw.classList.contains('on');
+  if(id==='A'){engine.A=m;engine.co.a=m;}else{engine.B=m;engine.co.b=m;}
+}
+
+/* messages transitoires affichés sous les sélecteurs (sinon l'intervalle 100 ms les écraserait) */
+const PSTAT_MSG={A:null,B:null};
+function pstatMsg(id,txt,secs){
+  const until=Date.now()+(secs||8)*1000;
+  (id==='*'?['A','B']:[id]).forEach(k=>{
+    PSTAT_MSG[k]={txt,until};
+    const el=UIs[k]&&UIs[k].pstat;if(el)el.textContent=txt;
+  });
+}
+
+async function scanDevices(){
+  try{
+    if(window.isSecureContext===false){
+      pstatMsg('*','page servie en HTTP non sécurisé : le micro exige HTTPS, localhost ou file:// — cartes réelles inaccessibles',14);
+      jlog('—','contexte non sécurisé — API micro bloquée par le navigateur','W');return false;
+    }
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      pstatMsg('*','API micro indisponible dans ce navigateur ou ce contexte (aperçu intégré ?) — ouvre le fichier directement dans Chrome/Edge',14);
+      jlog('—','navigator.mediaDevices absent — cartes réelles inaccessibles','W');return false;
+    }
+    pstatMsg('*','détection des cartes… autorise l\u2019accès au micro si le navigateur le demande',20);
+    let tmp=null;
+    try{tmp=await navigator.mediaDevices.getUserMedia({audio:true});}
+    catch(e){
+      const n=(e&&e.name)||'';
+      const why=n==='NotAllowedError'
+          ?'permission micro refusée — réactive-la via l\u2019icône de cadenas (paramètres du site), puis relance la détection'
+        :n==='NotFoundError'
+          ?'aucun périphérique d\u2019entrée audio trouvé sur ce système'
+        :'accès micro impossible ('+(n||e)+')';
+      pstatMsg('*',why,15);jlog('—',why,'W');return false;
+    }
+    await refreshCards(false);
+    try{tmp.getTracks().forEach(t=>t.stop());}catch(_){}
+    pstatMsg('*',DEVCARDS.length+' carte(s) détectée(s) — rouvre la liste \u00ab Connecteur \u00bb et choisis la carte',10);
+    return true;
+  }catch(e){
+    const msg='échec de la détection : '+((e&&(e.message||e.name))||e);
+    pstatMsg('*',msg,12);jlog('—',msg,'W');
+    return false;
+  }
+}
+async function refreshCards(quiet){
+  const devs=await navigator.mediaDevices.enumerateDevices();
+  let ins=devs.filter(d=>d.kind==='audioinput'&&d.deviceId!=='default'&&d.deviceId!=='communications');
+  const outs=devs.filter(d=>d.kind==='audiooutput'&&d.deviceId!=='default'&&d.deviceId!=='communications');
+  const df=devs.find(d=>d.kind==='audiooutput'&&d.deviceId==='default');
+  DEFAULT_OUT_LABEL=df?df.label:'';
+  if(ins.length===0)ins=devs.filter(d=>d.kind==='audioinput'&&d.deviceId==='default');
+  DEVCARDS=ins.map((i,k)=>{
+    const o=outs.find(o=>o.groupId&&o.groupId===i.groupId)
+          ||outs.find(o=>normName(o.label)&&normName(o.label)===normName(i.label))||null;
+    return {inId:i.deviceId,outId:o?o.deviceId:'',
+      label:i.label||('entrée '+(k+1)),outLabel:o?o.label:'sortie par défaut'};
+  });
+  rebuildPortSelects();
+  if(typeof updateCollide==='function')updateCollide();
+  if(!quiet)jlog('—',DEVCARDS.length+' carte(s) audio détectée(s)'+
+    (outs.length===0?' — sorties non listées par ce navigateur (lecture sur la sortie par défaut)'
+                    :' — appariement entrée/sortie par groupe ou par nom'));
+}
+if(navigator.mediaDevices&&navigator.mediaDevices.addEventListener){
+  navigator.mediaDevices.addEventListener('devicechange',()=>{
+    if(DEVCARDS.length)refreshCards(true).catch(()=>{});
+  });
+}
+function rebuildPortSelects(){
+  ['A','B'].forEach(id=>{
+    const sel=UIs[id].portSel;
+    sel.innerHTML='';
+    const o0=document.createElement('option');o0.value='virtual';o0.textContent='Ligne virtuelle interne';sel.appendChild(o0);
+    DEVCARDS.forEach((c,k)=>{
+      const o=document.createElement('option');o.value=String(k);
+      o.textContent='\ud83c\udf9b '+c.label;sel.appendChild(o);
+    });
+    const os=document.createElement('option');os.value='__scan';os.textContent='\u21bb Détecter / actualiser les cartes\u2026';sel.appendChild(os);
+    let v='virtual';
+    if(PORTS[id]){const k=DEVCARDS.findIndex(c=>c.inId===PORTS[id].card.inId);if(k>=0)v=String(k);}
+    sel.value=v;
+  });
+}
+async function onPortSelect(id){
+  try{
+  const sel=UIs[id].portSel,v=sel.value;
+  if(v==='__scan'){
+    let back='virtual';
+    if(PORTS[id]){const k=DEVCARDS.findIndex(c=>c.inId===PORTS[id].card.inId);if(k>=0)back=String(k);}
+    sel.value=back;
+    await scanDevices();return;
+  }
+  if(!engine)await startBench();
+  const m=engine[id];if(m&&m.offhook)m.userHangup();
+  if(PORTS[id]){PORTS[id].stop();PORTS[id]=null;}
+  if(v!=='virtual'){
+    const card=DEVCARDS[+v];
+    const p=new SoundPort(id,card);
+    try{
+      await p.start();
+      PORTS[id]=p;p.inGain=pgMap(+UIs[id].pg.value);
+      PSTAT_MSG[id]=null;
+      jlog(id,'connecteur audio : \u00ab '+card.label+' \u2192 '+card.outLabel+' \u00bb \u00b7 '+fr(p.fs/1000,1)+' kHz \u00b7 '+p.mode+' \u00b7 ligne directe (sans central)');
+      if(p.warn)jlog(id,'connecteur : '+p.warn,'W');
+      if(DEFAULT_OUT_LABEL&&normName(DEFAULT_OUT_LABEL)&&normName(DEFAULT_OUT_LABEL)===normName(card.label))
+        jlog(id,'attention : le moniteur (sortie par défaut) semble être la même carte — risque de doublon ou de boucle','W');
+    }catch(e){
+      const n=(e&&e.name)||'';
+      const why=n==='NotAllowedError'
+          ?'micro refusé pour cette carte — vérifie la permission (icône de cadenas), puis resélectionne'
+        :n==='NotFoundError'||n==='OverconstrainedError'
+          ?'entrée introuvable (carte débranchée ?) — relance la détection'
+        :'échec du connecteur ('+((e&&(e.message||e.name))||e)+')';
+      pstatMsg(id,why+' — retour à la ligne virtuelle',12);
+      jlog(id,why+' — retour à la ligne virtuelle','W');
+      try{p.stop();}catch(_){}
+      PORTS[id]=null;sel.value='virtual';
+    }
+  }else{PSTAT_MSG[id]=null;jlog(id,'connecteur : ligne virtuelle interne (central simulé)');}
+  rebindModem(id);refreshPortUI(id);lockSpeed();updateCollide();monSafety();
+  }catch(e){
+    pstatMsg(id,'erreur inattendue : '+((e&&(e.message||e.name))||e),12);
+    jlog(id,'erreur inattendue du connecteur : '+((e&&(e.message||e.name))||e),'W');
+  }
+}
+function refreshPortUI(id){
+  const p=PORTS[id];
+  UIs[id].pgRow.style.display=p?'':'none';
+}
+function lockSpeed(){
+  const any=!!(PORTS.A||PORTS.B),ch=$('#chipSpeed');
+  if(any&&speed!==1){
+    speed=1;ch.textContent='\u00d71,0 temps réel';updateGain();
+    if(audio.ok&&engine){audio.clear();sent=Math.floor(ctx.currentTime*engine.fs);}
+  }
+  ch.disabled=any;
+  ch.title=any?'temps réel imposé : un connecteur audio est actif':'';
+}
+/* boucle audio : si la sortie par défaut du système (celle du moniteur) est la
+   carte d'un connecteur, tout ce que le moniteur joue retombe dans la ligne.
+   On coupe alors l'audio du moniteur (les instruments restent alimentés). */
+let MON_COLLIDE=false;
+function updateCollide(){
+  const dn=normName(DEFAULT_OUT_LABEL);
+  let hit=false;
+  ['A','B'].forEach(k=>{
+    const p=PORTS[k];if(!p||!dn)return;
+    if(dn===normName(p.card.label)||dn===normName(p.card.outLabel))hit=true;
+  });
+  const was=MON_COLLIDE;MON_COLLIDE=hit;
+  updateGain();
+  if(hit&&!was){
+    jlog('—','moniteur coupé : la sortie par défaut du système est la carte du connecteur (boucle audio) — mets tes haut-parleurs en sortie par défaut puis relance la détection','W');
+    pstatMsg('*','moniteur coupé (boucle : sortie système par défaut = carte du connecteur) — instruments actifs, audio muet',12);
+  }
+  if(!hit&&was)jlog('—','boucle moniteur résolue — audio du moniteur réactivé');
+}
+/* sécurité par défaut : quel que soit le routage de l'OS, le moniteur ne doit
+   jamais pouvoir réinjecter la ligne dans la ligne pendant un handshake.
+   Connecteur actif → haut-parleur coupé (M0), instruments toujours vivants ;
+   l'écoute redevient un choix explicite (M2). */
+let MON_FORCED=false;
+function monSafety(){
+  const any=!!(PORTS.A||PORTS.B);
+  if(any&&!MON_FORCED){
+    MON_FORCED=true;
+    if(monMode!==0){
+      setMonMode(0);
+      jlog('—','connecteur audio actif → haut-parleur du moniteur coupé par sécurité (M0). Clique M2 pour écouter la ligne réelle — si la liaison se dégrade alors, un routage système renvoie la sortie par défaut dans la ligne.');
+      if(!MON_COLLIDE)pstatMsg('*','haut-parleur coupé par sécurité (M0) — instruments actifs ; clique M2 dans l\u2019onglet Ligne pour écouter',10);
+    }
+  }
+  if(!any&&MON_FORCED){
+    MON_FORCED=false;
+    if(monMode===0){setMonMode(2);jlog('—','retour en ligne virtuelle — haut-parleur du moniteur réactivé (M2)');}
+  }
+}
+
+/* ---- canvases ---- */
+function sizeCanvas(cv){
+  const r=cv.getBoundingClientRect();
+  if(r.width<5||r.height<5)return false;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.max(10,Math.round(r.width*dpr));
+  cv.height=Math.max(10,Math.round(r.height*dpr));
+  cv._dpr=dpr;return true;
+}
+function allCanvases(){
+  return ['cvCA','cvCB','cvSA','cvSB','cvEA','cvEB','cvQA','cvQB','cvWater','cvScope'].map(i=>$('#'+i));
+}
+function bgScope(g,w,h){g.fillStyle='#181f1c';g.fillRect(0,0,w,h);}
+
+const F_N=1024,fre=new Float32Array(F_N),fim=new Float32Array(F_N),tmp1024=new Float32Array(F_N);
+const W_N=512,wre=new Float32Array(W_N),wim=new Float32Array(W_N),tmp512=new Float32Array(W_N);
+const scopeBuf=new Float32Array(600);
+
+/* cascade hors écran : l'historique avance même quand l'onglet Ligne est caché */
+const WF_W=680,WF_H=360,WF_RH=2;
+const wfc=document.createElement('canvas');wfc.width=WF_W;wfc.height=WF_H;
+const wfg=wfc.getContext('2d');wfg.fillStyle='#181f1c';wfg.fillRect(0,0,WF_W,WF_H);
+function wfReset(){wfg.fillStyle='#181f1c';wfg.fillRect(0,0,WF_W,WF_H);}
+function drawWaterOff(){
+  if(!engine||!running)return;
+  wfg.drawImage(wfc,0,WF_RH);
+  engine.ringMon.last(tmp512);
+  for(let i=0;i<W_N;i++){wre[i]=tmp512[i]*hann(W_N,i);wim[i]=0;}
+  fft(wre,wim);
+  const maxF=Math.min(viewSpan(),Math.floor(engine.fs*0.49));
+  const binMax=Math.max(2,Math.min(W_N/2,Math.floor(maxF/engine.fs*W_N)));
+  for(let x=0;x<WF_W;x++){
+    const b=Math.min(binMax-1,Math.floor(x/WF_W*binMax));
+    const m=Math.hypot(wre[b],wim[b])/(W_N/4);
+    const t=clamp((dB(m)+80)/70,0,1);
+    wfg.fillStyle=heat(t);
+    wfg.fillRect(x,0,1,WF_RH);
+  }
+}
+function drawWaterBlit(){
+  const cv=$('#cvWater');if(!cv||cv.width<12)return;
+  const g=cv.getContext('2d'),w=cv.width,h=cv.height,dpr=cv._dpr||1;
+  const top=Math.round(16*dpr),bot=Math.round(14*dpr);
+  bgScope(g,w,h);
+  g.imageSmoothingEnabled=false;
+  g.drawImage(wfc,0,0,WF_W,WF_H,0,top,w,h-top-bot);
+  wfBands(g,w,h,dpr,top,bot);
+}
+
+function drawConst(cv){
+  const g=cv.getContext('2d'),w=cv.width,h=cv.height,dpr=cv._dpr||1;
+  bgScope(g,w,h);
+  g.strokeStyle='#3a453f';g.lineWidth=1;
+  g.beginPath();g.moveTo(w/2,4*dpr);g.lineTo(w/2,h-4*dpr);g.stroke();
+  g.beginPath();g.moveTo(4*dpr,h/2);g.lineTo(w-4*dpr,h/2);g.stroke();
+  g.fillStyle='#B4B2A9';g.font=(11*dpr)+'px system-ui';
+  g.fillText('Constellation RX',6*dpr,13*dpr);
+}
+function drawSpec(cv,ring,fs,marks){
+  const g=cv.getContext('2d'),w=cv.width,h=cv.height,dpr=cv._dpr||1;
+  bgScope(g,w,h);
+  const maxF=Math.min(viewSpan(),Math.floor(fs*0.49));
+  g.fillStyle='#B4B2A9';g.font=(11*dpr)+'px system-ui';
+  g.fillText('Spectre RX (0–'+(maxF>=10000?Math.round(maxF/1000):(maxF/1000))+' kHz)',6*dpr,13*dpr);
+  if(!engine||!ring)return;
+  ring.last(tmp1024);
+  for(let i=0;i<F_N;i++){fre[i]=tmp1024[i]*hann(F_N,i);fim[i]=0;}
+  fft(fre,fim);
+  const binMax=Math.max(2,Math.min(F_N/2,Math.floor(maxF/fs*F_N)));
+  g.strokeStyle='#5DCAA5';g.lineWidth=1.3*dpr;g.beginPath();
+  for(let x=0;x<w;x++){
+    const b=Math.min(binMax-1,Math.floor(x/w*binMax));
+    const m=Math.hypot(fre[b],fim[b])/(F_N/4);
+    const d=clamp((dB(m)+95)/95,0,1);
+    const y=h-4*dpr-d*(h-22*dpr);
+    if(x===0)g.moveTo(x,y);else g.lineTo(x,y);
+  }
+  g.stroke();
+  if(marks){
+    g.strokeStyle='rgba(250,199,117,.85)';g.lineWidth=1*dpr;g.setLineDash([3*dpr,3*dpr]);
+    for(const f of marks){
+      if(f>maxF)continue;
+      const x=f/maxF*w;
+      g.beginPath();g.moveTo(x,16*dpr);g.lineTo(x,h-2*dpr);g.stroke();
+    }
+    g.setLineDash([]);
+  }
+}
+function heat(t){
+  if(t<0.04)return '#181f1c';
+  if(t<0.55){const k=(t-0.04)/0.51;
+    return 'rgb('+Math.round(24+69*k)+','+Math.round(31+171*k)+','+Math.round(28+137*k)+')';}
+  const k=(t-0.55)/0.45;
+  return 'rgb('+Math.round(93+157*k)+','+Math.round(202-3*k)+','+Math.round(165-48*k)+')';
+}
+function wfBands(g,w,h,dpr,top,bot){
+  g.fillStyle='#181f1c';g.fillRect(0,0,w,top);g.fillRect(0,h-bot,w,bot);
+  g.fillStyle='#B4B2A9';g.font=(11*dpr)+'px system-ui';
+  const sp=Math.min(viewSpan(),engine?Math.floor(engine.fs*0.49):24000);
+  g.fillText('Spectrogramme de la ligne (t ↓) · 0–'+Math.round(sp/1000)+' kHz',6*dpr,12*dpr);
+  const ticks=sp<=4000?[0,1000,2000,3000,4000]:[0,4000,8000,12000,16000,20000,24000].filter(f=>f<=sp);
+  for(const f of ticks){
+    const x=clamp(f/sp*w,2,w-34*dpr);
+    g.fillText(f===0?'0':(f/1000)+' k'+(f===ticks[ticks.length-1]?'Hz':''),x,h-3*dpr);
+  }
+}
+function drawScope(){
+  const cv=$('#cvScope'),g=cv.getContext('2d'),w=cv.width,h=cv.height,dpr=cv._dpr||1;
+  bgScope(g,w,h);
+  g.fillStyle='#B4B2A9';g.font=(11*dpr)+'px system-ui';
+  g.fillText('Oscilloscope ligne'+(engine?' \u00b7 '+fr(scopeBuf.length/engine.fs*1000,1)+' ms':''),6*dpr,12*dpr);
+  if(!engine)return;
+  engine.ringMon.last(scopeBuf);
+  g.strokeStyle='#5DCAA5';g.lineWidth=1.2*dpr;g.beginPath();
+  for(let x=0;x<w;x++){
+    const v=scopeBuf[Math.floor(x/w*scopeBuf.length)];
+    const y=h/2-clamp(v,-0.7,0.7)*(h*0.62);
+    if(x===0)g.moveTo(x,y);else g.lineTo(x,y);
+  }
+  g.stroke();
+}
+function drawEye(cv,m,eye){
+  const g=cv.getContext('2d'),w=cv.width,h=cv.height,dpr=cv._dpr||1;
+  bgScope(g,w,h);
+  g.fillStyle='#B4B2A9';g.font=(11*dpr)+'px system-ui';
+  g.fillText('Œil (démod. souple)',6*dpr,12*dpr);
+  if(!m||!m.rx||!m.rx.dcd){
+    g.fillStyle='#6d7a74';g.fillText('en attente de porteuse',6*dpr,h-6*dpr);
+    return;
+  }
+  const n=eye.full?eye.N:eye.i;
+  const sep=Math.max(m.rx.mHi-m.rx.mLo,1e-3);
+  g.strokeStyle='#3a453f';g.beginPath();g.moveTo(0,h/2);g.lineTo(w,h/2);g.stroke();
+  g.fillStyle='rgba(93,202,165,.45)';
+  for(let k=0;k<n;k++){
+    const x=eye.ph[k]/2*w;
+    const y=h/2-clamp(eye.v[k]/sep,-0.62,0.62)*h;
+    g.fillRect(x,y,1.6*dpr,1.6*dpr);
+  }
+}
+
+function drawConstLive(cv,m,ui){
+  drawConst(cv);
+  const live=m&&m.rx&&m.rx.constPts&&m.rx.dcd;
+  if(ui&&ui.cn)ui.cn.style.display=live?'none':'';
+  if(!live)return;
+  const g=cv.getContext('2d'),w=cv.width,h=cv.height,dpr=cv._dpr||1;
+  const P=m.rx.constPts,R=Math.min(w,h)*0.33;
+  /* point ~40 % du pas de la grille : lisible du 4-QAM au 1024-QAM */
+  const sc=(m.rx.C&&m.rx.C.scale)||0.3162;
+  const ds=Math.max(1.1*dpr,Math.min(3.4*dpr,2*R*sc*0.4));
+  g.fillStyle='rgba(93,202,165,.55)';
+  for(let i=0;i<P.length;i+=2){
+    if(P[i]===0&&P[i+1]===0)continue;
+    g.fillRect(w/2+P[i]*R,h/2-P[i+1]*R,ds,ds);
+  }
+  g.fillStyle='#B4B2A9';g.font=(11*dpr)+'px system-ui';
+  const lbl=m.rx.qam?(m.rx.M+'-QAM'+(m.boom?' — adaptatif':'')):'DPSK 4 phases — différentielle';
+  g.fillText(lbl,6*dpr,h-6*dpr);
+}
+
+function drawEqLive(cv,m){
+  const g=cv.getContext('2d'),w=cv.width,h=cv.height,dpr=cv._dpr||1;
+  bgScope(g,w,h);
+  g.fillStyle='#B4B2A9';g.font=(11*dpr)+'px system-ui';
+  const rx=m&&m.rx;
+  const has=rx&&rx.eqW;
+  if(!has||!rx.qam||!rx.dcd||!rx.eqOn){
+    g.fillText('Égaliseur FFE',6*dpr,13*dpr);
+    g.fillStyle='#6d7a74';
+    let msg;
+    if(!rx)msg='en veille';
+    else if(!has)msg='FSK : détection par discriminateur — rien à égaliser';
+    else if(has&&rx.qam&&rx.dcd&&!rx.eqOn)msg='hors circuit à 600 Bd — le FFE appartient au récepteur V.BoOm';
+    else if(!rx.qam&&rx.dcd)msg='DPSK différentielle — égaliseur en attente des voies QAM';
+    else msg='en veille — s\u2019allume avec les décisions QAM (V.BoOm)';
+    const tw=g.measureText(msg).width;
+    g.fillText(msg,(w-tw)/2,h/2+4*dpr);
+    return;
+  }
+  const W=rx.eqW,N=W.length>>1;
+  g.fillText('Égaliseur FFE — '+N+' prises · '+(rx.eqOn?'adaptation LMS':'figé'),6*dpr,13*dpr);
+  const x0=8*dpr,x1=w-8*dpr,bw=(x1-x0)/N,y0=h-6*dpr,hh=h-26*dpr;
+  for(let t=0;t<N;t++){
+    const mag=Math.hypot(W[2*t],W[2*t+1]);
+    const bh=Math.max(1*dpr,hh*Math.min(1,Math.sqrt(mag)));
+    g.fillStyle=t===(N>>1)?'#5DCAA5':'rgba(250,199,117,.75)';
+    g.fillRect(x0+t*bw+bw*0.18,y0-bh,bw*0.64,bh);
+  }
+}
+let spanMode='auto',lastSpan=0;
+function wideAuto(){
+  if(!engine)return false;
+  for(const k of ['A','B']){
+    const m=engine[k];if(!m)continue;
+    if(m.boom||m.negBoom)return true;
+    if(PROTOS[m.maxProto].rank>=4&&(m.state==='TONE2100'||m.state==='ANS_DET'||m.state==='RINGBACK'||m.state==='ANSWER_SIL'))return true;
+  }
+  return false;
+}
+function viewSpan(){return spanMode==='auto'?(wideAuto()?24000:4000):+spanMode;}
+document.querySelectorAll('#spanChips .chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    spanMode=c.dataset.sp;
+    document.querySelectorAll('#spanChips .chip').forEach(x=>x.classList.toggle('on',x===c));
+    lastSpan=0;
+  });
+});
+
+let lastDraw=0;
+function render(ts){
+  requestAnimationFrame(render);
+  if(ts-lastDraw<33)return;
+  lastDraw=ts;
+  const sp=viewSpan();
+  if(sp!==lastSpan){lastSpan=sp;wfReset();}
+  drawWaterOff();
+  const fs=engine?engine.fs:48000;
+  if(curTab==='A'){
+    const A=engine?engine.A:null;
+    drawSpec($('#cvSA'),engine?(engine.A.port?engine.A.port.ringIn:engine.ringA):null,engine?engine.A.fs:fs,A&&A.rx?[A.rx.f1,A.rx.f0]:null);
+    drawEye($('#cvEA'),A,engine?engine.eyeA:null);
+    drawConstLive($('#cvCA'),A,UIs.A);
+    drawEqLive($('#cvQA'),A);
+  }else if(curTab==='B'){
+    const B=engine?engine.B:null;
+    drawSpec($('#cvSB'),engine?(engine.B.port?engine.B.port.ringIn:engine.ringB):null,engine?engine.B.fs:fs,B&&B.rx?[B.rx.f1,B.rx.f0]:null);
+    drawEye($('#cvEB'),B,engine?engine.eyeB:null);
+    drawConstLive($('#cvCB'),B,UIs.B);
+    drawEqLive($('#cvQB'),B);
+  }else{
+    drawWaterBlit();
+    drawScope();
+  }
+}
+
+function updModem(m,ui){
+  const p=m.pillTxt();
+  ui.pill.textContent=p[0];ui.pill.className='pill '+p[1];
+  const idx=m.phaseIdx();
+  ui.steps.forEach((b,k)=>{b.className=k<idx?'past':(k===idx?'cur':'');});
+  ui.phase.textContent='Phase : '+PHASES[idx]+' ('+(idx+1)+'/7)'+
+    (m.role?' — '+(m.role==='caller'?'appelant':'répondeur'):'');
+  const rx=m.rx;
+  ui.sSnr.textContent=(rx&&rx.dcd)?fr(clamp(rx.snrDb(),-9,45),1)+' dB':'—';
+  ui.sDf.textContent=(rx&&rx.dcd)?fr(rx.dfHz,1)+' Hz':'—';
+  ui.sRx.textContent=m.offhook?fr(Math.max(dB(Math.sqrt(m.rxLev)),-80),1)+' dBFS':'—';
+  ui.sFe.textContent=rx?rx.ferr:0;
+  ui.i1.textContent=m.dataMode?(m.link.label+' · '+m.link.bps+' bit/s · '+m.link.baud+' bauds')
+    :(m.offhook?'négociation V.8…':'Débit —');
+  ui.i2.textContent=m.role?'RX '+m.chRx:'RX —';
+  ui.i3.textContent=m.offhook?'TX '+fr(Math.max(dB(Math.sqrt(m.txLev)),-80),1)+' dBFS':'TX —';
+  ui.i4.textContent=(rx&&rx.dcd)?'porteuse détectée':'porteuse absente';
+  ui.i5.textContent='Octets TX '+(m.tx?m.tx.txBytes:0)+' · RX '+(rx?rx.rxBytes:0);
+  ui.i6.textContent=m.dataMode?'clavardage actif':'en attente';
+  ui.sw.classList.toggle('on',m.listenAuto);
+  ui.prChips.forEach(c=>{c.disabled=m.offhook;
+    c.classList.toggle('on',c.dataset.v===m.maxProto);});
+  let lb,cl,ds=false;
+  if(m.state==='RINGING'){lb='Répondre';cl='go';}
+  else if(m.offhook){
+    if(m.state==='DATA'){lb='Déconnecter';cl='off';}
+    else{lb='Connexion… — '+PHASES[m.phaseIdx()]+' ('+(m.phaseIdx()+1)+'/7)';cl='busy';ds=true;}
+  }else if(!m.direct&&engine.co.state!=='idle'){lb='ligne occupée';cl='na';ds=true;}
+  else{lb='Connecter';cl='go';}
+  ui.cx.textContent=lb;ui.cx.className='btnbig '+cl;ui.cx.disabled=ds;
+  ui.input.disabled=!m.dataMode;
+  const ph=m.dataMode?'écrire à l\u2019autre modem… puis Entrée':'connectez d\u2019abord — saisie désactivée';
+  if(ui.input.placeholder!==ph)ui.input.placeholder=ph;
+}
+
+setInterval(()=>{
+  if(!engine)return;
+  updModem(engine.A,UIs.A);
+  updModem(engine.B,UIs.B);
+  setTabStat('A',engine.A);setTabStat('B',engine.B);
+  $('#ttL').textContent=PROFILES[currentProfile].label;
+  $('#tdL').className='dot '+(engine.line.pickupOn?'r':'a');
+  $('#stT').textContent=fr(engine.t(),2)+' s';
+  $('#stSpeed').textContent='×'+fr(speed,1)+(speed===1?' temps réel':' (muet)');
+  $('#stCpu').textContent=fr(cpuPct,0)+' %';
+  $('#stAudio').textContent='audio : '+(audio.ok?audio.mode+' · '+fr(engine.fs/1000,1)+' kHz':'inactif');
+  $('#stBuf').textContent=audio.ok?fr(audio.lastQ/engine.fs*1000,0)+' ms':'—';
+  $('#stUr').textContent=audio.underruns;
+  const pb=$('#btnPickup');
+  const hot=engine.line.pickupOn;
+  pb.classList.toggle('on',hot);
+  pb.textContent=hot?'Raccrocher le combiné (couper le bruit)':'Décrocher le combiné (bruit continu)';
+  const mw=$('#monWarn');
+  if(mw)mw.style.display=MON_COLLIDE?'':'none';
+  ['A','B'].forEach(k=>{
+    const el=UIs[k].pstat,ov=PSTAT_MSG[k];
+    if(ov&&Date.now()<ov.until){el.textContent=ov.txt;return;}
+    if(ov)PSTAT_MSG[k]=null;
+    const p=PORTS[k];
+    if(p)el.textContent=p.card.label+' \u2192 '+p.card.outLabel+' \u00b7 '+fr(p.fs/1000,1)+' kHz \u00b7 '+p.mode+' \u00b7 tampon '+fr(p.q/p.fs*1000,0)+' ms \u00b7 pertes '+p.u+(p.warn?' \u00b7 '+p.warn:'');
+    else el.textContent='ligne virtuelle interne — central téléphonique simulé';
+  });
+},100);
+
+/* ---- onglets ---- */
+let curTab='A',lastVol=40;
+function setTabStat(id,m){
+  const dot=$('#td'+id),lab=$('#tt'+id);
+  if(!m){dot.className='dot';lab.textContent='à l\u2019écoute';return;}
+  const p=m.pillTxt();
+  lab.textContent=p[0];
+  dot.className='dot'+(p[1]?' '+p[1]:'');
+}
+function setTab(t){
+  curTab=t;
+  document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('#pA').classList.toggle('on',t==='A');
+  $('#pL').classList.toggle('on',t==='L');
+  $('#pB').classList.toggle('on',t==='B');
+  requestAnimationFrame(initCanvases);
+}
+document.querySelectorAll('#tabs .tab').forEach(b=>{
+  b.addEventListener('click',()=>setTab(b.dataset.t));
+});
+$('#chipVol').addEventListener('click',()=>{
+  if(volume>0){lastVol=volume;setVolume(0);}
+  else setVolume(lastVol||40);
+});
+
+/* ---- commandes globales ---- */
+function scheduleAuto(){
+  if(!AUTO)return;
+  setTimeout(()=>{
+    if(AUTO&&running&&engine&&engine.co.state==='idle'&&engine.A.state==='IDLE')engine.A.call();
+  },900);
+}
+
+async function startBench(){
+  if(engine)return;
+  const btn=$('#btnStart');
+  btn.disabled=true;btn.textContent='initialisation…';
+  try{await startAudio(48000);}catch(e){audio.ok=false;}
+  engine=new Engine(audio.ok?ctx.sampleRate:48000);applyUNoise();
+  engine.line.pickupAmp=pkMap(+$('#pkAmp').value);
+  $('#pkLbl').textContent=pkDesc();
+  rebindModem('A');rebindModem('B');
+  $('#chipFs').textContent=fr(engine.fs/1000,1)+' kHz';
+  if(audio.ok)sent=Math.floor(ctx.currentTime*engine.fs);
+  running=true;btn.disabled=false;
+  btn.textContent='⏸ Pause';btn.classList.add('running');
+  jlog('—','banc démarré — horloge '+fr(engine.fs/1000,1)+' kHz · sortie '+(audio.ok?audio.mode:'silencieuse'));
+  $('#pillJ').textContent='en cours';$('#pillJ').className='pill a';
+  scheduleAuto();
+}
+
+$('#btnStart').addEventListener('click',async()=>{
+  const btn=$('#btnStart');
+  if(!engine){await startBench();return;}
+  running=!running;
+  if(running&&audio.ok){audio.clear();sent=Math.floor(ctx.currentTime*engine.fs);}
+  btn.textContent=running?'⏸ Pause':'▶ Reprendre';
+  btn.classList.toggle('running',running);
+  jlog('—',running?'reprise':'pause');
+});
+
+$('#chipSpeed').addEventListener('click',()=>{
+  if(PORTS.A||PORTS.B)return; /* temps réel imposé par les connecteurs audio */
+  speed=speed===1?4:(speed===4?16:1);
+  $('#chipSpeed').textContent=speed===1?'×1,0 temps réel':'×'+speed+' (muet)';
+  if(speed===1&&audio.ok&&engine){audio.clear();sent=Math.floor(ctx.currentTime*engine.fs);}
+  updateGain();
+});
+
+$('#chipAuto').addEventListener('click',()=>{
+  AUTO=!AUTO;
+  $('#chipAuto').textContent=AUTO?'Connexion auto ✓':'Connexion auto —';
+  $('#chipAuto').classList.toggle('on',AUTO);
+  if(AUTO)scheduleAuto(); /* réarmement immédiat si le banc tourne */
+});
+
+$('#chipReset').addEventListener('click',()=>{
+  if(!engine)return;
+  const fs=engine.fs;
+  engine=new Engine(fs);applyUNoise();
+  rebindModem('A');rebindModem('B'); /* les connecteurs audio survivent au reset */
+  UIs.A.term.innerHTML='';UIs.B.term.innerHTML='';
+  $('#journal').innerHTML='';
+  CARRIER=false;updateGain();
+  if(audio.ok){audio.clear();sent=Math.floor(ctx.currentTime*fs);}
+  wfReset();
+  $('#pillJ').textContent=running?'en cours':'en attente';
+  $('#pillJ').className='pill'+(running?' a':'');
+  jlog('—','réinitialisation du banc');
+  if(running)scheduleAuto();
+});
+
+document.querySelectorAll('#profChips .chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    currentProfile=c.dataset.p;
+    document.querySelectorAll('#profChips .chip').forEach(x=>x.classList.toggle('on',x===c));
+    $('#pillProf').textContent=PROFILES[currentProfile].label;
+    $('#lineParams').textContent=PROFILES[currentProfile].txt;
+    $('#ttL').textContent=PROFILES[currentProfile].label;
+    if(engine){
+      engine.line.setProfile(currentProfile);
+      jlog('—','profil de ligne : '+PROFILES[currentProfile].label);
+    }
+  });
+});
+const uN=document.getElementById('uNoise'),uNL=document.getElementById('uNoiseLbl');
+function applyUNoise(){
+  if(!uN)return;
+  const v=+uN.value,db=v<=0?null:(42-44*(v/100));
+  if(uNL)uNL.textContent=db==null?'coupé':('SNR '+Math.round(db)+' dB');
+  if(engine)engine.line.setUserNoise(db);
+}
+if(uN)uN.addEventListener('input',applyUNoise);
+
+$('#volRange').addEventListener('input',e=>setVolume(+e.target.value));
+document.querySelectorAll('#mChips .chip').forEach(c=>{
+  c.addEventListener('click',()=>setMonMode(+c.dataset.m));
+});
+
+/* source du moniteur : alimente le haut-parleur ET les instruments de l'onglet Ligne */
+const SRC_TXT={
+  A:'TX de A : ce que le modem A émet — sur la ligne virtuelle ou vers sa carte de son',
+  B:'TX de B : ce que le modem B émet — sur la ligne virtuelle ou vers sa carte de son',
+  inA:'Entrée de A : ce que le modem A reçoit — RX de la ligne virtuelle, ou entrée de sa carte de son (après gain)',
+  inB:'Entrée de B : ce que le modem B reçoit — RX de la ligne virtuelle, ou entrée de sa carte de son (après gain)',
+  mix:'Mix : somme pondérée des deux émissions (TX A + TX B)',
+  auto:'Auto : ligne virtuelle → combiné de l\u2019appelant ; carte de son → l\u2019entrée de la ligne réelle (ce que les modems entendent)'
+};
+const SRC_LBL={A:'TX A',B:'TX B',inA:'entrée A',inB:'entrée B',mix:'mix',auto:'auto'};
+function setMonSrc(s,quiet){
+  monSrc=s;
+  document.querySelectorAll('#srcChips .chip').forEach(c=>c.classList.toggle('on',c.dataset.s===s));
+  $('#srcNote').textContent=SRC_TXT[s];
+  if(!quiet)jlog('—','écoute + instruments Ligne : source '+SRC_LBL[s]);
+}
+document.querySelectorAll('#srcChips .chip').forEach(c=>{
+  c.addEventListener('click',()=>setMonSrc(c.dataset.s));
+});
+
+function pkMap(v){return 0.005+2.2*Math.pow(v/100,2);}
+function pkDesc(){
+  const v=+$('#pkAmp').value,a=pkMap(v);
+  const db=(20*Math.log10(a/0.25)).toFixed(0);
+  const z=v<20?'faible':(v<50?'moyen':(v<75?'fort':'extrême'));
+  return z+' · '+db+' dB / porteuse';
+}
+$('#btnPickup').addEventListener('click',()=>{
+  if(!engine||!running)return;
+  engine.line.pickupOn=!engine.line.pickupOn;
+  if(engine.line.pickupOn){
+    engine.line.pickupAmp=pkMap(+$('#pkAmp').value);
+    jlog('—','combiné décroché — bruit large bande continu ('+pkDesc()+')','W');
+  }else jlog('—','combiné raccroché — bruit retiré');
+});
+$('#pkAmp').addEventListener('input',()=>{
+  if(engine)engine.line.pickupAmp=pkMap(+$('#pkAmp').value);
+  $('#pkLbl').textContent=pkDesc();
+});
+
+function initCanvases(){
+  allCanvases().forEach(cv=>{
+    if(cv&&sizeCanvas(cv)){
+      if(cv.id==='cvCA'||cv.id==='cvCB')drawConst(cv);
+    }
+  });
+  if(curTab==='L')drawWaterBlit();
+}
+window.addEventListener('resize',initCanvases);
+
+/* ---- démarrage ---- */
+buildPanel('#pA','A','origine');
+buildPanel('#pB','B','réponse');
+$('#lineParams').textContent=PROFILES[currentProfile].txt;
+setMonMode(2);setVolume(40);setMonSrc('auto',true);
+UIs.A.print('SOFTMODEM COEUR v0.2 — modem A','dim');
+UIs.B.print('SOFTMODEM COEUR v0.2 — modem B','dim');
+jlog('—','banc prêt — cliquer « Démarrer » (le navigateur exige un geste pour l\u2019audio)');
+requestAnimationFrame(()=>{initCanvases();requestAnimationFrame(render);});
+</script>
+</body>
+</html>
